@@ -3,9 +3,11 @@
     <v-card
         class="mx-auto"
         tile
+        flat
         :disabled="disabled"
         :loading="disabled"
     >
+        <v-card-text>
         <slot name="top"></slot>
         <v-list
             two-line
@@ -53,7 +55,7 @@
                                 >
                                     <v-icon>mdi-pencil</v-icon>
                                 </v-btn>
-                                <confirm
+                                <abp-confirm
                                     v-if="confirmDelete"
                                     title="Действительно удалить?"
                                     text="Внимание! Файл удаляется без возможности восстановления"
@@ -64,7 +66,7 @@
                                     >
                                         <v-icon>{{deleteIcon}}</v-icon>
                                     </v-btn>
-                                </confirm>
+                                </abp-confirm>
                                 <v-btn
                                     v-else
                                     icon
@@ -81,25 +83,15 @@
         <div
             v-else
         >
-            <v-banner>
-                <template v-slot:icon>
-                    <abp-icon-button
-                        icon="mdi-plus"
-                        tip="Добавить файл"
-                        :color="color"
-                        @click="addFile"
-                    ></abp-icon-button>
-                </template>
-                Пока нет файлов
-            </v-banner>
+            Пока нет файлов
         </div>
+        </v-card-text>
         </v-card>
     </div>
 </template>
 
 <script>
     import Confirm from './Dialogs/Confirm.vue'
-    import ABPIconButton from './Form/ABPIconButton'
 
     export default {
         name: 'file-list',
@@ -135,8 +127,7 @@
             }
         },
         components:{
-            'confirm' : Confirm,
-            'abp-icon-button' : ABPIconButton
+            'abp-confirm' : Confirm,
         },
         methods: {
             removeFile(file) {

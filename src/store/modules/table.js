@@ -53,18 +53,21 @@ export default {
         // значения опций таблицы (страница, строк на страницу, сортировака и т.п.)
         tableOptions: {
             'sklad_receives': {sortBy: ['in_doc_date'], sortDesc: [true], multiSort: false},
-            'sklad_moves': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false}
+            'sklad_moves': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false},
+            'kontragents': {sortBy: ['name'], sortDesc: [false], multiSort: false},
         },
         // отображение столбцов в таблице по умолчанию
         showCols:{
             'nomenklatura': ['id', 'name', 'part_num','manufacturer_id','description','manufacturer','main_image','ostatok','avg_price','stock_balance'],
-            'sklad_receives': ['in_doc_num','in_doc_date','summa','kontragent_id','sklad_id']
+            'sklad_receives': ['in_doc_num','in_doc_date','summa','kontragent_id','sklad_id'],
+            'kontragents': ['name', 'inn']
         },
         // отображение столбцов в мобильной версии
         showMobileCols: {
             'nomenklatura': ['${name} (${description})', 'Производитель: ${manufacturer}','Остаток: ${ostatok} ${ed_ism}'],
             'sotrudniks' : ['fio', 'firm_position'],
-            'sklad_receives' : [' № ${doc_num} от ${doc_date}', 'от ${kontragent}', 'на сумму ${summa}']
+            'sklad_receives' : [' № ${doc_num} от ${doc_date}', 'от ${kontragent}', 'на сумму ${summa}'],
+            'recipe_items' : [' № ${nomenklatura} x ${kolvo} ${ed_ism}']
         }
     },
 
@@ -250,10 +253,15 @@ export default {
                 Vue.set(state.showCols, payload.table, payload.data)
             }
         },
-
+        CLEAR_USER_INFO_DATA(state) {
+            state.formData['user_info'] = null
+        },
     },
 
     actions: {
+        clearUserInfoData({commit}) {
+            commit('CLEAR_USER_INFO_DATA')
+        },
         getTableModel({state, commit, dispatch},tableName) {
 // console.log('action gettablemodel started')
             dispatch('setLoading', true)
@@ -328,24 +336,29 @@ export default {
                                 postPayload.id = newData.id
                                 // проводим
                                 // console.log(`postPayload=${JSON.stringify(postPayload)}`)
-                                dispatch('setPost',postPayload)
-                                    .then((postResponse)=>{
-                                        dispatch('setInformation', postPayload.message?postPayload.message:'Данные успешно сохранены')
-                                        if (postResponse.data.data) {
-                                            let formData = postResponse.data.data
-                                            commit('SET_FORM_DATA', {tableName: payload.table, data:formData})
-                                            commit('UPDATE_TABLE_DATA', {table:payload.table, data:formData})
-                                            resolve(postResponse.data.data)
-                                        } else {
-                                            resolve(response)
-                                        }
-                                    })
-                                    .catch((e)=>{
-                                        reject(e)
-                                    })
-                                    .finally(()=>{
-                                        dispatch('setLoading', false)
-                                    })
+                                try {
+                                    dispatch('setPost',postPayload)
+                                        .then((postResponse)=>{
+                                            dispatch('setInformation', postPayload.message?postPayload.message:'Данные успешно сохранены')
+                                            if (postResponse.data.data) {
+                                                let formData = postResponse.data.data
+                                                commit('SET_FORM_DATA', {tableName: payload.table, data:formData})
+                                                commit('UPDATE_TABLE_DATA', {table:payload.table, data:formData})
+                                                resolve(postResponse.data.data)
+                                            } else {
+                                                resolve(response)
+                                            }
+                                        })
+                                        .catch((e)=>{
+                                            reject(e)
+                                        })
+                                        .finally(()=>{
+                                            dispatch('setLoading', false)
+                                        })
+                                }
+                                catch(e) {
+                                    reject(e)
+                                }
                             } else {
                                 dispatch('setInformation', {color:'error', text:'Данные для проведения документа не получены'})
                             }
@@ -396,7 +409,7 @@ export default {
             dispatch('getTableModel', payload.table)
                 .then(()=>{
                     dispatch('setLoading', true)
-                        Services.saveTableRow(payload.table, payload.modType, state.model[payload.table], payload.values)
+                        Services.saveTableRow(payload.table, payload.modType, state.model[payload.table], payload.values, payload.copyOptions?payload.copyOptions:{})
                         .then((response)=> {
                             let formData = null
                             if (response) {

@@ -4,7 +4,8 @@ import store from './store/store.js'
 // var debug = true
 
 export default {
-    request(url,method, data=null, model=null) {
+
+    request(url, method, data=null, model=null) {
 // console.log(`request url=${url},method=${method}, data=${JSON.stringify(data)}, model=${JSON.stringify(model)}`)
         let formData = null
         if (data) {
@@ -57,10 +58,23 @@ export default {
                     let fval = formData[field.name]
                     switch (ftype) {
                         case 'image': case 'file': case 'document': {
-                            if (!!fval && typeof(fval)=='object' && fval.length>0) {
-                                for (let file of fval) {
-                                    fd.set(fname, file, file.name)
+                            // console.log(`ftype=${ftype}, fval=${typeof(fval)}`)
+                            if (!!fval && typeof(fval)=='object') {
+                                // Если это массив
+                                if (Array.isArray(fval)) {
+                                    // добавляем несколько файлов
+                                    for (let file of fval) {
+                                        fd.append(fname, file, file.name)
+                                    }
+                                } else {
+                                    fd.set(fname, fval, fval.name)
                                 }
+
+                                // for (let file in fval) {
+                                //     console.log(`ftype=${ftype}, fval=${typeof(fval)}, file=${file}, fval[file]=${fval[file]}, file.name=${file.name}`)
+                                //     // fd.set(fname, file, file.name)
+                                //     fd.set(fname, fval[file])
+                                // }
                             } else {
                                 fd.append(fname, null)
                             }
@@ -302,7 +316,7 @@ export default {
         }
     },
     // сохранение записи
-    saveTableRow(table, modType, model, data) {
+    saveTableRow(table, modType, model, data, copyOptions) {
         // console.log(table, modType)
         // console.log(JSON.stringify(model))
         // console.log(JSON.stringify(data))
@@ -311,15 +325,27 @@ export default {
         // console.log(JSON.stringify(data.id))
         // // настройки запроса
         const formDataConfig = {...store.getters.axiosCfg, 'content-type': 'multipart/form-data' }
-
-        if (modType=='edit') {
-            // редактирование
-            formData.append("_method", "PUT")
-            return axios.post(`/api/v1/${table}/${data.id}`, formData, formDataConfig)
-        } else {
-            // добавление
-            formData.append("_method", "POST")
-            return axios.post(`/api/v1/${table}`, formData, formDataConfig)
+        // добавим modType
+        formData.append("_mod_type", modType)
+        // выполняем запрос
+        switch (modType) {
+            case 'edit': {
+                // редактирование
+                formData.append("_method", "PUT")
+                return axios.post(`/api/v1/${table}/${data.id}`, formData, formDataConfig)
+            }
+            case 'add': {
+                // добавление
+                formData.append("_method", "POST")
+                return axios.post(`/api/v1/${table}`, formData, formDataConfig)
+            }
+            case 'copy': {
+                // добавление
+                formData.append("_method", "POST")
+                // параметры копирования
+                formData.append("_copy_options", copyOptions?JSON.stringify(copyOptions):null)
+                return axios.post(`/api/v1/${table}`, formData, formDataConfig)
+            }
         }
     },
     getTableRow(table, id) {

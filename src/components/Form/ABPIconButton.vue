@@ -24,7 +24,7 @@
         props: {
             // значок
             icon: {
-                type : String,
+                type : [String,Boolean],
                 required: true,
             },
             // подсказка

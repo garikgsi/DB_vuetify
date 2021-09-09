@@ -78,17 +78,36 @@ export default {
         setPrevRoute({commit},route) {
             commit('SET_PREV_ROUTE', route)
         },
+        // отображение ошибки
+        pushError({dispatch},text) {
+            dispatch('setInformation', {color:'error', timeout:-1, text:text})
+        },
+        // отображение ошибки
+        pushWarning({dispatch},text) {
+            dispatch('setInformation', {color:'warning', text:text})
+        },
+        // отображение ошибки
+        pushInfo({dispatch},text) {
+            dispatch('setInformation', {color:'success', text:text})
+        },
         // обработка ошибки обработки запроса - стандартная для всех ответов от API
         appErrorException({dispatch},e) {
             if (e.response) {
                 let code = e.response.status
                 let errData = e.response.data
+                let errText
+                try {
+                    errText = errData.error[0]
+                }
+                catch(e) {
+                    errText = null
+                }
                 switch (code) {
                     case 403: {
-                        dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа (403)'})
+                        dispatch('setInformation', {color:'error', timeout:-1, text: ()=>errText || 'Ошибка прав доступа (403)'})
                     } break;
                     case 405: {
-                        dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Недопустимый метод (405)'})
+                        dispatch('setInformation', {color:'error', timeout:-1, text: ()=>errText || 'Недопустимый метод (405)'})
                     } break;
                     case 422: {
                         let err = 'Проверьте заполненность обязательных полей (422)'
@@ -111,14 +130,14 @@ export default {
                     //     this.msgColor = 'error'
                     } break;
                     case 413: {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Слишком много данных (413)'})
+                        dispatch('setInformation', {color:'error',timeout:-1, text: ()=>errText || 'Слишком много данных (413)'})
                     } break;
                     default: {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
+                        dispatch('setInformation', {color:'error',timeout:-1, text: ()=>errText || 'Неизвестная ошибка сервера'})
                     }
                 }
             } else {
-                dispatch('setInformation', {color:'error',timeout:-1, text:'Неизвестный ответ сервера'})
+                dispatch('setInformation', {color:'error',timeout:-1, text: 'Неизвестный ответ сервера' })
             }
         }
     },

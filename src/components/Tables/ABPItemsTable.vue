@@ -10,6 +10,7 @@
       :show-footer="false"
       :show-header="false"
       :show-actions="actions"
+      :show-active-decoration="false"
       @rowClick="rowClick($event)"
     >
       <template v-slot:[`item.actions`]="{ item }" v-if="actions">

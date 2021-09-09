@@ -1,6 +1,6 @@
 {
   "appId": "ru.moydodyr.db",
-  "appName": "moydodyr db",
+  "appName": "moydodyr",
   "webDir": "dist",
   "bundledWebRuntime": false
 }

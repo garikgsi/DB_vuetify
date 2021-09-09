@@ -56,7 +56,9 @@
 
         <div>
           <v-divider></v-divider>
-          <v-card-actions>
+          <v-card-actions
+            class="my-2"
+          >
             <div v-if="buttons">
               <div
                 v-for="(button, index) in buttons"
@@ -119,12 +121,12 @@ export default {
       type: String,
       required: false,
     },
+    // модель, как мы ее получаем из Laravel
     model: {
       type: Array,
       required: false,
     },
     buttons: {
-      type: Array,
       required: false,
       default() {
         return [{ type: "submit", title: "OK", color: "primary" }];
@@ -186,10 +188,6 @@ export default {
     };
   },
   created() {
-    // установим тайтл
-    if (this.title) {
-      this.setTitle(this.title);
-    }
     // присвоим id форме
     if (this.id) {
       this.formId = this.id;
@@ -200,6 +198,8 @@ export default {
   mounted() {
     if (this.formLoaded) {
       if (this.setFocus) this.focus();
+    // установим тайтл
+      this.setTitle(this.title);
     }
     // console.log('simple-form-mounted')
   },
@@ -232,8 +232,7 @@ export default {
       return this.disableForm || this.loading || false;
     },
     formLoaded() {
-      return true;
-      // return Object.keys(this.values).length == this.loadedFields.length
+      return this.model.length == this.loadedFields.length
     },
   },
   methods: {
@@ -366,10 +365,16 @@ export default {
   },
   watch: {
     formLoaded(newValue) {
-      // после загрузки формы - фокус на 1-й инпут
-      if (newValue) {
-        this.focus();
-      }
+        // после загрузки формы - фокус на 1-й инпут
+        if (newValue) {
+          this.focus();
+          // let input = document.querySelector(`#form_${this.formId}_field_0 input`);
+          // if (input) {
+          //   input.focus();
+          // } else {
+          //   console.log(`couldn't find DOM element #form_${this.formId}_field_0 input`)
+          // }
+        }
     },
     formValid(valid) {
       this.$emit("validated", valid);

@@ -1,11 +1,13 @@
 <template>
-    <span @click="clickOpenDialog">
-        <slot></slot>
         <v-dialog
             v-model="openDialog"
             :disabled="disabled"
             max-width="300"
         >
+            <template v-slot:activator="{ on, attrs }">
+                <slot name="activator" v-bind="{ on, attrs }"></slot>
+            </template>
+
             <v-card>
                 <v-card-title>{{title}}</v-card-title>
                 <v-card-text>{{text}}</v-card-text>
@@ -15,12 +17,11 @@
                         v-for="(button,i) in buttons"
                         :key="`btn_${i}`"
                         :color="button.color"
-                        @click="btnClick(button.action)"
+                        @click.stop="btnClick(button.action)"
                     >{{button.title}}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
-    </span>
 </template>
 
 <script>
@@ -52,7 +53,7 @@
                         {title:'Нет', action: 'close', color: 'success'},
                     ]
                 }
-            }
+            },
         },
         computed: {
             openDialog: {
@@ -71,9 +72,9 @@
                 }
                 this.openDialog = false
             },
-            clickOpenDialog() {
-                if (!this.disabled) this.openDialog = true
-            }
+            // clickOpenDialog() {
+            //     if (!this.disabled) this.openDialog = true
+            // }
         }
     }
 </script>

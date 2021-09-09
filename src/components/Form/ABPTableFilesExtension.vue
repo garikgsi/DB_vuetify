@@ -1,12 +1,5 @@
 <template>
     <div>
-        <v-btn
-            fab dark small absolute top right
-            :color="btnColor"
-            @click="addFile"
-        >
-            <v-icon>mdi-plus</v-icon>
-        </v-btn>
         <abp-dialog
             v-model="openAddFileForm"
             :width="500"
@@ -14,6 +7,7 @@
             <abp-files-form
                 :table="table"
                 :id="id"
+                :key="key"
                 :model="fields"
                 v-model="values"
                 @submit="save"
@@ -22,6 +16,14 @@
         <div
             v-if="files"
         >
+        <v-btn
+            fab dark small absolute top right
+            class="my-8 mx-10"
+            :color="btnColor"
+            @click="addFile"
+        >
+            <v-icon>mdi-plus</v-icon>
+        </v-btn>
             <component
                 :is="componentName"
                 :files="files"
@@ -117,21 +119,22 @@
                 openAddFileForm: false,
                 loading:false,
                 modType: 'add',
-                file_drivers: null,
+                // file_drivers: null,
                 changed: false,
+                key: this.genKey()
             }
         },
         created() {
             this.getData()
             // подгрузим список драйверов
-            if (!this.$store.state.table.selectData['file_drivers']) {
-                this.getSelectData('file_drivers')
-                    .then(()=>{
-                        this.file_drivers = this.$store.state.table.selectData['file_drivers']
-                    })
-            } else {
-                this.file_drivers = this.$store.state.table.tableData['file_drivers']
-            }
+            // if (!this.$store.state.table.selectData['file_drivers']) {
+                if (!this.file_drivers) this.getSelectData('file_drivers')
+                    // .then(()=>{
+                    //     this.file_drivers = this.$store.state.table.selectData['file_drivers']
+                    // })
+            // } else {
+            //     this.file_drivers = this.$store.state.table.tableData['file_drivers']
+            // }
             // подгрузим список файлов, если тип=список
             if (this.type=='list') {
                 if (!this.$store.state.table.fileList[this.table]) this.getFileList(this.table)
@@ -139,6 +142,15 @@
         },
         computed: {
             ...mapGetters(['tableFiles','isLoading']),
+            // драйвера ФС
+            file_drivers() {
+                try {
+                    return this.$store.state.table.selectData['file_drivers']
+                }
+                catch (e) {
+                    return null
+                }
+            },
             disabled() {
                 return this.isLoading
             },
@@ -244,6 +256,9 @@
         },
         methods: {
             ...mapActions(['getFiles','editFile','saveFile','getSelectData','deleteFile','getFileList','syncFiles']),
+            genKey() {
+                return `m_${Math.floor(Math.random( ) * (10000+1))}`
+            },
             removeFile(id) {
                 switch (this.type) {
                     case 'list': {
@@ -332,6 +347,8 @@
                                 }
                                 // закрываем форму
                                 this.openAddFileForm = false
+                                // регенерация формы
+                                this.key = this.genKey()
                             })
                             .catch(()=>{
 // console.log(`error=${JSON.stringify(e)}`)

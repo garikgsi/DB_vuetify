@@ -108,7 +108,7 @@ const router = new Router({
                 name: 'report',
                 component: ABPReport,
                 props: true
-            }
+            },
         ]
     })
 

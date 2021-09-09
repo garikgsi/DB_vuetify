@@ -13,6 +13,7 @@
       :show-filters-button="true"
       :loading="tableLoading"
       :filters-disabled="filtersDisabled"
+      :filters-count="filtersCounter"
       :show-row-actions="true"
       :expanded="withExpander"
       :show-footer="true"
@@ -26,7 +27,7 @@
       <!-- кнопка добавить -->
       <template v-slot:prepend-top-actions v-if="editable">
         <!-- для мобилы -->
-        <v-btn v-if="isMobile" text color="primary" @click="actionAdd">
+        <v-btn v-if="isMobile && !searchFocused" text @click="actionAdd">
           Новая запись
         </v-btn>
         <!-- для десктопа -->
@@ -37,6 +38,18 @@
           :disabled="!hasAddPermission"
           @click="actionAdd"
         ></abp-icon-button>
+      </template>
+      <!-- поиск -->
+      <template v-slot:top-actions>
+        <v-divider vertical class="mx-1"></v-divider>
+        <abp-filter
+          v-if="hasSearchFilter"
+          v-model="searchFilter"
+          dark
+          :filter="searchFilterModel"
+          @input="changeFilters()"
+          @selected="setSearchFocus($event)"
+        ></abp-filter>
       </template>
       <!-- фильтры -->
       <template v-slot:filters>
@@ -94,7 +107,7 @@
           </abp-delete-button>
         </div>
         <!-- для десктопа -->
-        <v-row v-else>
+        <v-row v-else class="action-table-buttons">
           <template v-if="itemsTable && isDocument">
             <abp-icon-button
               v-if="parseInt(item.is_active) === 1"
@@ -232,6 +245,7 @@ import ABPDeleteButtonVue from "../Form/ABPDeleteButton.vue";
 import ABPDialogVue from "../Dialogs/ABPDialog.vue";
 import ABPNomenklaturaSeriesVue from "../Form/ABPNomenklaturaSeries.vue";
 import ABPNomenklaturaSeriesEditorVue from "../Form/ABPNomenklaturaSeriesEditor.vue";
+import ABPFilterVue from "../Filters/ABPFilter.vue";
 // import ABPSimpleTable from './ABPSimpleTable.vue'
 // import ABPWaitingMessage from '../Info/ABPWaitingMessage'
 // import ABPFilters from '../Filters/ABPFilters'
@@ -250,6 +264,7 @@ export default {
     "abp-dialog": ABPDialogVue,
     "abp-series": ABPNomenklaturaSeriesVue,
     "abp-series-editor": ABPNomenklaturaSeriesEditorVue,
+    "abp-filter": ABPFilterVue,
   },
   model: {
     prop: "inputValue",
@@ -380,6 +395,12 @@ export default {
       currentItemEditor: null,
       // обрабатываемая строка с серийником
       currentItem: null,
+      // поиск по таблице
+      searchFilter: null,
+      // объект описания поиска для фильтра
+      searchFilterModel: { name: "search", type: "string" },
+      // фокус на поиске
+      searchFocused: false,
     };
   },
   created() {
@@ -404,6 +425,11 @@ export default {
       "setPost",
       "setTitle",
     ]),
+    // установлен/снят фокус с инпута поиска
+    setSearchFocus(isFocused) {
+      this.searchFocused = isFocused;
+    },
+    // начальная инициализация
     startInit() {
       return new Promise((resolve) => {
         this.getTableModel(this.tableName).then(() => {
@@ -439,7 +465,7 @@ export default {
       });
     },
     changeFilters(newVal) {
-      this.filters = { ...newVal };
+      this.filters = { ...newVal, ...{ search: this.searchFilter } };
       // this.setTableFilterValues({'table':this.tableName, 'data':this.filters})
       //     .then(()=>{
       //         this.getData()
@@ -732,7 +758,7 @@ export default {
         }
         // добавим подчиненную таблицу, если есть
         if (
-          this.isDocument &&
+          // this.isDocument &&
           this.hasItemsTable &&
           currentRow.items &&
           this.itemsTable.table
@@ -776,6 +802,7 @@ export default {
         this.$emit("input", newVal);
       },
     },
+    // все фильтры для таблицы
     filters: {
       get() {
         if (this.$store.state.table.filterValues[this.tableName]) {
@@ -792,6 +819,19 @@ export default {
         });
       },
     },
+    // фильтр - текстовый поиск
+    hasSearchFilter() {
+      try {
+        return (
+          this.$store.state.table.filters[this.table].findIndex((filter) => {
+            return filter.name == "search";
+          }) !== -1
+        );
+      } catch (e) {
+        return false;
+      }
+    },
+    // полная модель таблицы
     fullModel() {
       return this.$store.state.table.model[this.tableName] || null;
     },
@@ -1026,9 +1066,19 @@ export default {
       }
       return false;
     },
+    // количество выбранных фильтров
+    filtersCounter() {
+      let counter = 0;
+      for (let filter in this.filters) {
+        if (filter !== "search") {
+          if (this.filters[filter]) counter++;
+        }
+      }
+      return counter;
+    },
     // когда фильтры неактивны
     filtersDisabled() {
-      return Object.keys(this.filters).length == 0;
+      return this.filtersCounter === 0;
     },
     // тип таблицы
     tableType() {
@@ -1136,5 +1186,9 @@ export default {
 <style lang="scss" scoped>
 .expander-column {
   padding: 0 !important;
+}
+.action-table-buttons {
+  display: block;
+  margin: 0;
 }
 </style>

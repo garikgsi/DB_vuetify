@@ -5,7 +5,11 @@
       <!-- мобильное отображение таблицы -->
       <div v-if="isMobile">
         <v-card width="100%" :loading="isLoading">
-          <v-toolbar v-if="showHeader">
+          <v-toolbar :color="color" dark dense flat tile v-if="showHeader">
+            <!-- слот выбора столбцов  -->
+            <slot name="column-setup"></slot>
+            <!-- слот заголовка  -->
+            <slot name="title"></slot>
             <!-- слот перед кнопками действий  -->
             <slot name="prepend-top-actions"></slot>
             <slot name="top-actions"></slot>
@@ -26,11 +30,21 @@
                 :disabled="filtersDisabled"
                 @click="clearFilters"
               ></abp-icon-button>
-              <abp-icon-button
-                :icon="toggleFiltersIcon"
-                :tip="`${showFilters ? 'Скрыть' : 'Показать'} фильтры`"
-                @click="toggleFilters"
-              ></abp-icon-button>
+              <v-badge
+                :content="filtersCount"
+                color="red"
+                right
+                overlap
+                offset-x="20"
+                offset-y="20"
+                :value="filtersCount"
+              >
+                <abp-icon-button
+                  :icon="filtersBtnIcon"
+                  :tip="`${showFilters ? 'Скрыть' : 'Показать'} фильтры`"
+                  @click="toggleFilters"
+                ></abp-icon-button>
+              </v-badge>
             </template>
             <!-- слот после кнопок действий  -->
             <slot name="append-top-actions"></slot>
@@ -41,12 +55,26 @@
               <slot name="filters"></slot>
             </v-card-text>
           </template>
+          <!-- между фильтрами и данными -->
+          <slot name="append-top"></slot>
           <!-- данные таблицы -->
+          <v-progress-linear
+            height="2"
+            indeterminate
+            :color="color"
+            v-if="isLoading"
+          ></v-progress-linear>
+
           <div>
             <v-list
               :disabled="isLoading"
               :elevation="0"
-              :class="{ 'pt-0': !showHeader, 'pb-0': !showFooter }"
+              :class="{
+                'pt-0': !showHeader,
+                'pb-0': !showFooter,
+                'data-list': showActiveDecoration,
+              }"
+              :style="borderColor"
             >
               <template v-for="(item, i) in items">
                 <v-list-group
@@ -98,7 +126,7 @@
                         <!-- подчиненная таблица, если есть -->
                         <template v-if="expanded">
                           <v-divider inset></v-divider>
-                          <v-card-text>
+                          <v-card-text class="pa-0">
                             <slot
                               name="expander"
                               v-bind="{ headers, item }"
@@ -237,18 +265,28 @@
                     :disabled="filtersDisabled"
                     @click="clearFilters"
                   ></abp-icon-button>
-                  <abp-icon-button
-                    :icon="toggleFiltersIcon"
-                    :tip="`${showFilters ? 'Скрыть' : 'Показать'} фильтры`"
-                    @click="toggleFilters"
-                  ></abp-icon-button>
+                  <v-badge
+                    :content="filtersCount"
+                    color="red"
+                    right
+                    overlap
+                    offset-x="20"
+                    offset-y="20"
+                    :value="filtersCount"
+                  >
+                    <abp-icon-button
+                      :icon="filtersBtnIcon"
+                      :tip="`${showFilters ? 'Скрыть' : 'Показать'} фильтры`"
+                      @click="toggleFilters"
+                    ></abp-icon-button>
+                  </v-badge>
                 </template>
                 <!-- слот после кнопок действий  -->
                 <slot name="append-top-actions"></slot>
               </v-toolbar>
               <!-- блок фильтров -->
               <template v-if="showFiltersButton">
-                <div v-show="showFilters">
+                <div v-show="showFilters" class="light-blue lighten-5">
                   <slot name="filters"></slot>
                 </div>
               </template>
@@ -464,19 +502,27 @@ export default {
     toggleFiltersIcon: {
       type: String,
       required: false,
-      default: "mdi-magnify",
+      default: "mdi-filter",
+      // default: "mdi-magnify",
     },
     // иконка очистки фильтров
     clearFiltersIcon: {
       type: String,
       required: false,
-      default: "mdi-magnify-close",
+      default: "mdi-filter-off",
+      // default: "mdi-magnify-close",
     },
     // фильтры не выбраны
     filtersDisabled: {
       type: Boolean,
       required: false,
       default: true,
+    },
+    // количнство выбранных фильтров
+    filtersCount: {
+      type: Number,
+      required: false,
+      default: 0,
     },
     // иконка раскрывающегося блока
     expandIcon: {
@@ -516,6 +562,12 @@ export default {
       required: false,
       default: true,
     },
+    // отображать полосу выделения экспандера
+    showActiveDecoration: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
   },
   components: {
     "abp-waiting-message": ABPWaitingMessageVue,
@@ -549,6 +601,20 @@ export default {
       "sortFieldTypes",
       "isMobile",
     ]),
+    // иконка кнопки фильтрации
+    filtersBtnIcon() {
+      return this.showFilters ? "mdi-filter-menu" : "mdi-filter";
+    },
+    // тип кнопки фильтрации
+    filterBtnTitlte() {
+      return `${this.showFilters ? "Скрыть" : "Показать"} фильтры`;
+    },
+    // стиль css для активного бордера
+    borderColor() {
+      return {
+        "--border-color": "#1976d2",
+      };
+    },
     // показывать экспандер
     showExpander() {
       if (this.isMobile) {
@@ -819,5 +885,9 @@ export default {
 <style lang="scss">
 .expander-column {
   padding: 0 !important;
+}
+.data-list > .v-list-group--active {
+  border-right: 5px solid;
+  border-color: var(--border-color);
 }
 </style>

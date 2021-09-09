@@ -123,7 +123,8 @@
             // конечное значение
             inputValue: {
                 type: [Number , String],
-                required: true
+                required: true,
+                default: 1
             },
             // структура из модели поля
             // structure: [

@@ -8,11 +8,36 @@
       :expanded="true"
       :default-actions="false"
       :show-column-setup="false"
-      :add-actions="true"
+      :show-actions="true"
+      :options="{itemsPerPage:-1}"
     >
+      <!-- заголвоок для мобильной таблицы -->
+      <template v-slot:title v-if="isMobile">
+        <v-toolbar-title>
+          {{ title }}
+        </v-toolbar-title>
+      </template>
       <!-- действия с изделиями -->
       <template v-slot:[`item.actions`]="{ item }">
-        <div>
+        <div
+          v-if="isMobile"
+        >
+          <v-btn
+            color="primary"
+            text
+            :disabled="item.is_producted != 1"
+            @click="setProducted(false, item)"
+          >Разобрать</v-btn>
+          <v-btn
+            color="primary"
+            text
+            :disabled="item.is_producted == 1 && item.id != undefined"
+            @click="setProducted(true, item)"
+          >Оприходовать</v-btn>
+        </div>
+        <div
+          v-else
+        >
           <!-- разобрать изделие -->
           <abp-icon-button
             :disabled="item.is_producted != 1"
@@ -36,12 +61,23 @@
           :disable-npp="false"
           :headers="componentsTableHeaders"
           :items="item.components"
+          :show-actions="true"
           height="auto"
         >
           <!-- действия в строке компонента изделия -->
-          <template v-slot:[`item.actions`]="{ item }">
+          <template v-slot:[`actions`]="{ item }">
             <!-- ввести серийные номера -->
+            <v-btn
+              v-if="isMobile"
+              text
+              :color="color"
+              :disabled="!item.id"
+              @click="series(item)"
+            >
+              Серийные №
+            </v-btn>
             <abp-icon-button
+              v-else
               icon="mdi-music-accidental-sharp"
               :tip="`Серийные номера`"
               :color="color"
@@ -66,7 +102,7 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import ABPIconButtonVue from "../Form/ABPIconButton.vue";
 import ABPItemsTableVue from "./ABPItemsTable.vue";
 import ABPSimpleTableVue from "./ABPSimpleTable.vue";
@@ -106,6 +142,7 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(['isMobile']),
     // данные
     data: {
       get() {
@@ -137,8 +174,15 @@ export default {
               nomenklatura_id: component.nomenklatura_id,
               kolvo: component.kolvo,
               nomenklatura: component.nomenklatura,
+              lines: [
+                `${component.nomenklatura}`,
+                `Кол-во: ${component.kolvo}`
+              ]
             };
           }),
+          lines: [
+            `${item.nomenklatura} SN ${item.serial}`
+          ]
         };
         return prod;
       });

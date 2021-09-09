@@ -9,7 +9,7 @@
     >
       <template v-slot:fields>
         <v-row dense>
-          <v-col cols="3">
+          <v-col cols="12" md="3">
             <abp-select-input
               v-model="val.nomenklatura_from_id"
               title="Заменяемый компонент"
@@ -18,26 +18,46 @@
               :readonly="true"
             ></abp-select-input>
           </v-col>
-          <v-col cols="2">
+          <v-col cols="12" md="2">
             <kolvo-input
               v-model="val.kolvo_from"
               title="Количество заменяемого"
               :required="true"
             ></kolvo-input>
           </v-col>
-          <v-spacer></v-spacer>
-          <v-icon :color="color" large>
+          <v-spacer
+            class="d-none d-md"
+          ></v-spacer>
+          <v-col
+            v-if="isMobile"
+            cols="12"
+            class="text-center"
+          >
+            <v-icon 
+              :color="color" 
+              large
+            >
+              mdi-swap-vertical
+            </v-icon>
+          </v-col>
+          <v-icon 
+            v-else
+            :color="color" 
+            large
+          >
             mdi-swap-horizontal
           </v-icon>
-          <v-spacer></v-spacer>
-          <v-col cols="2">
+          <v-spacer
+            class="d-none d-md"
+          ></v-spacer>
+          <v-col cols="12" md="2">
             <kolvo-input
               v-model="val.kolvo_to"
               title="Количество заменителя"
               :required="true"
             ></kolvo-input>
           </v-col>
-          <v-col cols="3">
+          <v-col cols="12" md="3">
             <abp-select-input
               v-model="val.nomenklatura_to_id"
               title="Заменитель"
@@ -61,7 +81,7 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 
 import ABPSelectInputVue from "../Form/ABPSelectInput.vue";
 import KolvoInputVue from "../Form/KolvoInput.vue";
@@ -118,6 +138,7 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(['isMobile']),
     val() {
       return this.inputValue;
     },

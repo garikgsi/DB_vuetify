@@ -331,4 +331,9 @@ export default {
 .v-text-field > .v-input__control > .v-input__slot:before {
   border: none;
 }
+.v-list-group--active {
+  border-right: 5px solid;
+  border-color: #1976d2;
+}
+
 </style>

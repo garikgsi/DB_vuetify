@@ -490,6 +490,11 @@
         watch: {
             table(newTable) {
                 this.initInput(newTable)
+            },
+            data(newValue) {
+                if (newValue.length==2 && this.chooseEqual) {
+                    this.$emit('input',newValue[1].id)
+                }
             }
         }
     }

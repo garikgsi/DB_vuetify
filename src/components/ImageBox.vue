@@ -43,17 +43,22 @@
                     >
                         <v-icon>mdi-pencil</v-icon>
                     </v-btn>
-                    <confirm
+                    <abp-confirm
                         title="Действительно удалить?"
                         text="Внимание! Файл удаляется без возможности восстановления"
+                        v-model="deleteDialogOpen"
                         @confirmPress="removeFile(file.id)"
                     >
-                        <v-btn
-                            icon
-                        >
-                            <v-icon>mdi-delete</v-icon>
-                        </v-btn>
-                    </confirm>
+                        <template v-slot:activator="{ on, attrs }">
+                            <v-btn
+                                v-bind="attrs"
+                                v-on="on"
+                                icon
+                            >
+                                <v-icon>mdi-delete</v-icon>
+                            </v-btn>
+                        </template>
+                    </abp-confirm>
                 <v-spacer></v-spacer>
             </v-card-actions>
         </v-card>
@@ -82,7 +87,12 @@
 
         },
         components:{
-            'confirm' : Confirm,
+            'abp-confirm' : Confirm,
+        },
+        data() {
+            return {
+                deleteDialogOpen: false
+            }
         },
         methods: {
             makeMain(id) {

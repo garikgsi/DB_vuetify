@@ -35,7 +35,9 @@
             </template>
           </v-toolbar>
 
-          <v-card-text>
+          <v-card-text
+            class="pa-0"
+          >
             <v-list v-if="items && headers">
               <template v-for="(row, rowIndex) in items">
                 <abp-document-table-row-form

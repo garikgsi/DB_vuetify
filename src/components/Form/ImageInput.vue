@@ -17,7 +17,60 @@
       @change="changeInput($event)"
     >
     </v-file-input>
-    <v-text-field
+        <div
+          v-else
+        >
+          <legend
+            class="v-label--active"
+          >
+            {{settings.title}}
+          </legend>
+          <v-row 
+            no-gutters
+            v-if="!imgLoadingError"
+          >
+            <v-col cols="1" class="text-left">
+              <v-btn icon @click="toggleImagePreview">
+                <v-icon>{{ resizeIcon }}</v-icon>
+              </v-btn>
+            </v-col>
+            <v-col cols="10">
+              <v-img
+                :contain="imageContain"
+                :max-height="maxHeight"
+                :height="maxHeight"
+                max-width="500"
+                :src="imageSrc"
+                @error="imageError"
+                @load="imgLoadComplete"
+                @click="toggleImagePreview"
+              ></v-img>
+            </v-col>
+            <v-col cols="1" class="text-left">
+              <abp-confirm
+                :disabled="readonly"
+                v-model="showDeleteDialog"
+                title="Подтвердите удаление"
+                :text="'Вы действительно хотите удалить изображение?'"
+                @confirmPress="deleteFile()"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                      :disabled="readonly"
+                      v-bind="attrs"
+                      v-on="on"
+                      icon
+                  >
+                      <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </template>
+              </abp-confirm>
+            </v-col>
+          </v-row>
+        
+        </div>
+
+    <!-- <v-text-field
       v-else
       :label="settings.title"
       :readonly="true"
@@ -46,21 +99,28 @@
               ></v-img>
             </v-col>
             <v-col cols="1" class="text-left">
-              <confirm
+              <abp-confirm
                 :disabled="readonly"
                 title="Подтвердите удаление"
                 :text="'Вы действительно хотите удалить изображение?'"
                 @confirmPress="deleteFile()"
               >
-                <v-btn :disabled="readonly" icon>
-                  <v-icon>{{ icons.delete }}</v-icon>
-                </v-btn>
-              </confirm>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                      :disabled="readonly"
+                      v-bind="attrs"
+                      v-on="on"
+                      icon
+                  >
+                      <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </template>
+              </abp-confirm>
             </v-col>
           </v-row>
         </div>
       </template>
-    </v-text-field>
+    </v-text-field> -->
   </div>
 </template>
 
@@ -69,8 +129,9 @@ import { mapState, mapGetters } from "vuex";
 import Confirm from "../Dialogs/Confirm.vue";
 
 export default {
+  name:'image-input',
   components: {
-    confirm: Confirm,
+    'abp-confirm': Confirm,
   },
   model: {
     prop: "inputValue",
@@ -88,9 +149,12 @@ export default {
   data() {
     return {
       showSmallImage: true,
-      files: null,
+      files: [],
       imgLoading: true,
       imgLoadingError: false,
+      // показывать диалог подтверждения удалени яизображения
+      showDeleteDialog: false,
+
     };
   },
   created() {
@@ -182,19 +246,12 @@ export default {
       return this.settings.icon || "mdi-camera";
     },
     isServerImg() {
-      if (
-        this.fileSrc &&
-        typeof this.fileSrc == "string" &&
-        this.fileSrc.length > 4
-      ) {
-        return true;
-      } else {
-        return false;
-      }
+      return this.fileSrc && typeof(this.fileSrc) == "string" && this.fileSrc.length > 4
     },
     imageSrc() {
       // return this.fileSrc.replace('/storage/thumbs/','/storage/')
-      return `http://api.test/storage/thumbs/${this.fileSrc}`;
+      // return `http://api.test/storage/thumbs/${this.fileSrc}`;
+      return `${this.fileSrc}`;
     },
   },
 };

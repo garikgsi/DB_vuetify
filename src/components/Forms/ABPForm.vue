@@ -11,146 +11,158 @@
     <!-- {{formModel}} -->
     <!-- {{permissions}} -->
     <!-- {{hasPermissions}} -->
-    <abp-tabs v-model="activeTab" :tabs="tabs" :disabled="formDisabled">
-      <!-- форма -->
-      <!-- {{showWaitingMessage}} -->
-      <template v-slot:[formSlot]>
-        <abp-simple-form
-          v-if="tableReady"
-          v-model="formValues"
-          :title="title"
-          :model="visibleFields"
-          :loading="formLoading"
-          :buttons="null"
-          :closable="closable"
-          :singleFieldRow="singleFieldRow"
-          :setFocus="setFocus"
-          :readonly="readonly"
-          :disabled="formDisabled"
-          @startLoading="startLoading"
-          @endLoading="endLoading"
-          @buttonClick="onButtonClick"
-          @clickClose="clickClose"
-          @validated="formValidated($event)"
-        >
-          <template v-slot:after-fields>
-            <abp-groups
-              v-if="showGroups && !miniForm"
-              :table="table"
-              :id="id"
-            ></abp-groups>
-            <!-- табличная часть документа -->
-            <div v-if="showSubTable">
-              <v-divider></v-divider>
-              <abp-document-table
-                :table="subTable.table"
-                :title="subTable.title"
-                :sklad-id="formValues[subTable.skladId]"
-                :no-nds="!withNds"
-                color="light-green"
-                v-model="subTableItems"
-                :readonly="readonly"
-                :with-series="withSeries"
-                :with-series-editor="withSeriesEditor"
-                @validated="tableValidated($event)"
-              ></abp-document-table>
-            </div>
-            <slot name="after-fields"></slot>
-          </template>
-          <!-- левая секция кнопок -->
-          <template v-slot:buttons-left>
-            <slot name="buttons-left">
-              <v-btn
-                :disabled="!fullValid"
-                color="primary"
-                @click.stop="onSubmit(true)"
-              >
-                OK
-              </v-btn>
-              <template v-if="!miniForm">
-                <v-btn
-                  :disabled="!fullValid"
-                  color="primary"
-                  @click.stop="onSubmit(false)"
-                >
-                  Сохранить
-                </v-btn>
-                <template v-if="isDocument">
-                  <v-btn
-                    v-if="!isActive"
-                    :disabled="!fullValid"
-                    color="success"
-                    @click.stop="makeActiveAndSubmit(true)"
-                  >
-                    Провести и закрыть
-                  </v-btn>
-                  <v-btn
-                    v-if="isActive"
-                    :disabled="!fullValid"
-                    color="secondary"
-                    @click.stop="makeUnactiveAndSubmit(true)"
-                  >
-                    Распровести и закрыть
-                  </v-btn>
-                </template>
-              </template>
-            </slot>
-          </template>
-          <!-- правая секция кнопок -->
-          <template v-slot:buttons-right>
-            <v-btn v-if="canSwitchMini" @click="toggleMiniForm" text>
-              {{ miniFormTitle }}
-            </v-btn>
-          </template>
-        </abp-simple-form>
-        <abp-waiting-message v-else>
-          {{ waitMessage }}
-        </abp-waiting-message>
-      </template>
-      <!-- Все файлы в 1 вкладке -->
-      <template v-slot:all-files v-if="showFilesTab">
-        <v-expansion-panels multiple v-model="filesPanel">
-          <template v-for="(panel, i) in filesPanelItems">
-            <v-expansion-panel :key="`panel_${i}`">
-              <v-expansion-panel-header>
-                {{ panel.title }}
-              </v-expansion-panel-header>
-              <v-expansion-panel-content>
-                <abp-table-files-extension
+    
+    <div
+      v-if="tableReady"
+    >
+
+        <abp-tabs v-model="activeTab" :tabs="tabs" :disabled="formDisabled">
+          <!-- форма -->
+          <!-- {{showWaitingMessage}} -->
+          <template v-slot:[formSlot]>
+            <abp-simple-form
+              v-if="tableReady"
+              v-model="formValues"
+              :title="title"
+              :model="visibleFields"
+              :loading="formLoading"
+              :buttons="null"
+              :closable="closable"
+              :singleFieldRow="singleFieldRow"
+              :setFocus="setFocus"
+              :readonly="readonly"
+              :disabled="formDisabled"
+              @startLoading="startLoading"
+              @endLoading="endLoading"
+              @buttonClick="onButtonClick"
+              @clickClose="clickClose"
+              @validated="formValidated($event)"
+            >
+              <template v-slot:after-fields>
+                <abp-groups
+                  v-if="showGroups && !miniForm"
                   :table="table"
                   :id="id"
-                  :type="panel.name"
-                >
-                </abp-table-files-extension>
-              </v-expansion-panel-content>
-            </v-expansion-panel>
+                ></abp-groups>
+                <!-- табличная часть документа -->
+                <div v-if="showSubTable">
+                  <v-divider></v-divider>
+                  <abp-document-table
+                    :table="subTable.table"
+                    :title="subTable.title"
+                    :sklad-id="formValues[subTable.skladId]"
+                    :no-nds="!withNds"
+                    color="primary"
+                    v-model="subTableItems"
+                    :readonly="readonly"
+                    :with-series="withSeries"
+                    :with-series-editor="withSeriesEditor"
+                    @validated="tableValidated($event)"
+                  ></abp-document-table>
+                </div>
+                <slot name="after-fields"></slot>
+              </template>
+              <!-- левая секция кнопок -->
+              <template v-slot:buttons-left>
+                <slot name="buttons-left">
+                  <v-btn
+                    :disabled="!fullValid"
+                    color="primary"
+                    @click.stop="onSubmit(true)"
+                  >
+                    OK
+                  </v-btn>
+                  <template v-if="!miniForm">
+                    <v-btn
+                      :disabled="!fullValid"
+                      color="primary"
+                      @click.stop="onSubmit(false)"
+                    >
+                      Сохранить
+                    </v-btn>
+                    <template v-if="isDocument">
+                      <v-btn
+                        v-if="!isActive"
+                        :disabled="!fullValid"
+                        color="success"
+                        @click.stop="makeActiveAndSubmit(true)"
+                      >
+                        Провести
+                      </v-btn>
+                      <v-btn
+                        v-if="isActive"
+                        :disabled="!fullValid"
+                        color="secondary"
+                        @click.stop="makeUnactiveAndSubmit(true)"
+                      >
+                        Распровести
+                      </v-btn>
+                    </template>
+                  </template>
+                </slot>
+              </template>
+              <!-- правая секция кнопок -->
+              <template v-slot:buttons-right>
+                <v-btn v-if="canSwitchMini" @click="toggleMiniForm" text>
+                  {{ miniFormTitle }}
+                </v-btn>
+              </template>
+            </abp-simple-form>
+            <abp-waiting-message v-else>
+              {{ waitMessage }}
+            </abp-waiting-message>
           </template>
-        </v-expansion-panels>
-      </template>
-      <!-- подчиненные таблицы -->
-      <template v-for="tab in subTableTabs" v-slot:[tab.name]>
-        <abp-form-sub-table
-          :key="`st_${tab.keys.foreign_table}_${id}`"
-          :table="tab.keys.foreign_table"
-          :keyModel="tab.keyModel"
-        ></abp-form-sub-table>
-      </template>
-      <!-- кнопка закрыть -->
-      <template v-slot:after>
-        <slot name="after">
-          <v-row>
-            <v-col
-              v-if="!miniForm && tableReady && withCloseButton"
-              class="d-flex align-end flex-column"
-            >
-              <v-btn text @click.stop="closeAction">
-                Закрыть
-              </v-btn>
-            </v-col>
-          </v-row>
-        </slot>
-      </template>
-    </abp-tabs>
+          <!-- Все файлы в 1 вкладке -->
+          <template v-slot:all-files v-if="showFilesTab">
+            <v-expansion-panels flat multiple v-model="filesPanel">
+              <template v-for="(panel, i) in filesPanelItems">
+                <v-expansion-panel :key="`panel_${i}`">
+                  <v-expansion-panel-header>
+                    {{ panel.title }} 
+                  </v-expansion-panel-header>
+                  <v-expansion-panel-content>
+                    <abp-table-files-extension
+                      :table="table"
+                      :id="id"
+                      :type="panel.name"
+                    >
+                    </abp-table-files-extension>
+                  </v-expansion-panel-content>
+                  <v-divider></v-divider>
+                </v-expansion-panel>
+              </template>
+            </v-expansion-panels>
+          </template>
+          <!-- подчиненные таблицы -->
+          <template v-for="tab in subTableTabs" v-slot:[tab.name]>
+            <abp-form-sub-table
+              :key="`st_${tab.keys.foreign_table}_${id}`"
+              :table="tab.keys.foreign_table"
+              :keyModel="tab.keyModel"
+            ></abp-form-sub-table>
+          </template>
+          <!-- кнопка закрыть -->
+          <template v-slot:after>
+            <slot name="after">
+              <v-row>
+                <v-col
+                  v-if="!miniForm && tableReady && withCloseButton"
+                  class="d-flex align-end flex-column"
+                >
+                  <v-btn 
+                    text 
+                    class="ma-4"
+                    @click.stop="closeAction"
+                  >
+                    Закрыть
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </slot>
+          </template>
+        </abp-tabs>
+      </div>
+
   </div>
 </template>
 
@@ -291,37 +303,28 @@ export default {
       required: false,
       default: false,
     },
+    // опции копирования
+    copyOptions: {
+      type: Object,
+      required: false
+    }
   },
   data() {
     return {
-      // модель полей формы
-      // formModel: [],
-      // поля
-      // fields: null,
-      // расширения таблицы
-      // formExtensions: {},
       // необходимость отображения спинера этого плагина
       thisLoading: false,
-      // значения формы
-      // formValues: {items:[]},
       // форма правильно заполнена
       formValid: false,
       // таблица провалидирована
       tableValid: false,
       // активный таб
       activeTab: 0,
-      //   // табличная часть документа, если документ конечно
-      //   subTable: null,
       // всего селектов в форме
       selects: [],
       // загруженных селектов в форме
       selectsLoaded: 0,
       // все селекты проверены
       selectsChecked: false,
-      // // табличная часть для нового документа
-      // newSubTableItems: []
-      // модель загружена
-      // modelLoaded: false,
       // данные загружены
       dataLoaded: false,
     };
@@ -465,7 +468,7 @@ export default {
     },
     showGroups() {
       if (this.formExtensions)
-        return this.formExtensions.has_groups && this.id && this.table;
+        return this.formExtensions.has_groups && this.id && this.table && this.modType=='edit';
       else return false;
     },
     showDocuments() {
@@ -712,7 +715,6 @@ export default {
   methods: {
     ...mapActions([
       "getTableModel",
-      "saveTableRow",
       "setLoading",
       "getFormData",
       "getSelectData",
@@ -732,17 +734,17 @@ export default {
       return new Promise((resolve, reject) => {
         if (this.modType != "add" && !!this.id) {
           if (this.id) {
-            if (
-              this.$store.state.table.formData[this.table] &&
-              this.$store.state.table.formData[this.table][this.id]
-            ) {
-              // значения берем из стейта
-              this.formValues = this.$store.state.table.formData[this.table][
-                this.id
-              ];
-              this.storeDataLoded = true;
-              resolve();
-            } else {
+            // if (
+            //   this.$store.state.table.formData[this.table] &&
+            //   this.$store.state.table.formData[this.table][this.id]
+            // ) {
+            //   // значения берем из стейта
+            //   this.formValues = this.$store.state.table.formData[this.table][
+            //     this.id
+            //   ];
+            //   this.storeDataLoded = true;
+            //   resolve();
+            // } else {
               // грузим значения в стейт
               this.getFormData({ tableName: this.table, id: this.id }).then(
                 () => {
@@ -753,7 +755,7 @@ export default {
                   resolve();
                 }
               );
-            }
+            // }
           } else {
             reject("не передан id");
             console.error("не передан id записи");
@@ -785,6 +787,11 @@ export default {
               let fieldValue = null;
               if (field.default) {
                 fieldValue = field.default;
+              } else {
+                let selectFields = ['select', 'foreign_select']
+                if (selectFields.indexOf(field.type)!==-1) {
+                  fieldValue = 1
+                }
               }
               Vue.set(this.formValues, field.name, fieldValue);
             });
@@ -892,6 +899,7 @@ export default {
             modType: this.modType,
             model: this.formModel,
             values: saveVals,
+            copyOptions: this.copyOptions
           };
           if (withPost) {
             for (let i in withPost) {
@@ -971,6 +979,10 @@ export default {
         this.$router.go(-1);
       }
     },
+    // // подтверждение в форме выбора опций
+    // copyOptionsFormSubmit() {
+    //   this.copyOptionsIsSet = true
+    // }
   },
   watch: {
     tableReady(isReady) {
@@ -984,4 +996,5 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+</style>

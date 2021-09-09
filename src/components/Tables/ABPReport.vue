@@ -2,6 +2,7 @@
     <div>
         <!-- {{filterValues}} -->
         <abp-simple-table
+            v-if="items"
             title="Отчет по остаткам"
             :model="headers"
             :items="items"
@@ -14,10 +15,11 @@
             @clearFilters="clearFilters"
             :filters-disabled="emptyFiltersValues"
             :options="tableOptions"
+            :show-column-setup="false"
             @optionsChanged="changeOptions($event)"
         >
             <!-- вывод экспандера -->
-            <template v-slot:expander="{ headers, item }">
+            <template v-slot:expander="{ item }">
                 <!-- <td
                     :colspan="headers.length"
                     class="expander-column"
@@ -26,7 +28,7 @@
                         :items="item.items"
                         :headers="itemsHeaders"
                         :disable-npp="true"
-                        :height="auto"
+                        height="auto"
                     ></abp-items-table>
                 <!-- </td> -->
             </template>
@@ -84,7 +86,29 @@
                 ]
             },
             items() {
-                return this.$store.state.table.tableData[this.table]
+                try {
+                    let storeData = this.$store.state.table.tableData[this.table]
+                    if (storeData) {
+                        return storeData.map(item=>{
+                            let lines = [
+                                `${item.name}`
+                            ]
+                            let items = item.items.map(i=>{
+                                return {...i, ...{lines: [
+                                    `${i.nomenklatura}`,
+                                    `остаток: ${i.kolvo} ${i.ed_ism}`
+                                ]}}
+                            })
+
+                            return {...item, ...{lines: lines}, ...{items:items}}
+                        })
+
+                    }
+                }
+                catch(e) {
+                    return []
+                }
+                return []
             },
             itemsHeaders() {
                 return [

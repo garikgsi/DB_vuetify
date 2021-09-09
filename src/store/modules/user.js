@@ -14,79 +14,10 @@ export default {
         user_info: null,
         // разрешения, описанные в приложении
         permissions: null,
-        // интерфейсы, описанные в приложении
-        interfaces: null,
-        userInterface: [
-            {
-                title: 'Админка сайта',
-                icon: 'mdi-webpack',
-                route: '/site-admin',
-            },
-            {
-                title: 'Управление пользователями',
-                icon: 'mdi-key',
-                route: '/user-admin',
-            },
-            {
-                title: 'Сотрудники',
-                icon: 'mdi-account-hard-hat',
-                route: '/table/sotrudniks',
-            },
-            {
-                title: 'Транспортные компании',
-                icon: 'mdi-truck',
-                route: '/table/shipping_companies',
-            },
-            {
-                title: 'Номенклатура',
-                icon: 'mdi-barcode-scan',
-                route: '/table/nomenklatura',
-            },
-            {
-                title: 'Поступления на склад',
-                icon: 'mdi-warehouse',
-                route: '/table/sklad_receives',
-            },
-            {
-                title: 'Перемещения по складам',
-                icon: 'mdi-chevron-double-right',
-                route: '/table/sklad_moves',
-            },
-            {
-                title: 'Производство',
-                icon: 'mdi-wrench',
-                route: '/table/productions',
-            },
-            {
-                title: 'Отчет по остаткам',
-                icon: 'mdi-paper-roll',
-                route: '/report/report_sklad_remains',
-            },
-        ],
-        // футер-меню
-        footerMenu: [
-            {
-                title: 'Склады',
-                icon: 'mdi-warehouse',
-                route: '/table/sklad_receives',
-            },
-            {
-                title: 'Сотрудники',
-                icon: 'mdi-account-hard-hat',
-                route: '/table/sotrudniks',
-            },
-            {
-                title: 'Отчеты',
-                icon: 'mdi-paper-roll',
-                route: '/report/report_sklad_remains',
-            },
-        ],
         // информация о пользователях для администратора
         adm_user_info: {},
         // напоминания
         notifications: [],
-
-
     },
 
     mutations: {
@@ -146,41 +77,65 @@ export default {
     },
 
     actions: {
-        login({commit, dispatch}, user) {
-            dispatch('setLoading', true)
-            return Services.request('/api/v1/login','post',user)
-                .then((r)=>{
-                    if (r.status==200 && r.data.data.token) {
-                        let userData = {'token':r.data.data.token, 'expire':r.data.data.expires_at, 'roles':r.data.data.roles}
-                        if (r.data.data.user) userData = {...userData, ...r.data.data.user}
-                        commit('SET_USER', userData)
-                        dispatch('setInformation', 'Добро пожаловать')
-                        dispatch('getUserInfo')
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:r.data.error[0] || 'Некорректная авторизация'})
-                    }
-                })
-                .catch((e)=> {
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 401: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка авторизации'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка авторизации'})
+        login({dispatch}, user) {
+            return new Promise((resolve, reject) => {
+                dispatch('setLoading', true)
+                return Services.request('/api/v1/login','post',user)
+                    .then((r)=>{
+                        if (r.status==200 && r.data.data.token) {
+                            // роли пользователя
+                            let userRoles = r.data.data.roles
+                            // формируем данные пользовательской информации
+                            let userData = {'token':r.data.data.token, 'expire':r.data.data.expires_at, 'roles':userRoles}
+                            if (r.data.data.user) userData = {...userData, ...r.data.data.user}
+                            dispatch('setUser',userData)
+                            dispatch('setInformation', 'Добро пожаловать')
+                            dispatch('getUserInfo')
+                        } else {
+                            let err = 'Некорректная авторизация'
+                            try {
+                                err = r.data.error[0]
                             }
+                            catch(e) {
+                                console.log(`Некорректная авторизация`)
+                            }
+                            dispatch('setInformation', {color:'error',timeout:-1, text: err })
                         }
-                    }
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                })
+                        resolve(r)
+                    })
+                    .catch((e)=> {
+                        if (e.response) {
+                            let code = e.response.status
+                            let errData = e.response.data
+                            // console.log(`code=${code}, errData=${JSON.stringify(errData.error[0])}`)
+                            let err
+                            try {
+                                err = errData.error[0]
+                            }
+                            catch(e) {
+                                console.log(`Ошибка авторизации`)
+                            }
+                            
+                            switch (code) {
+                                case 401: {
+                                    if (err === undefined) err = 'Ошибка авторизации'
+                                } break;
+                                default: {
+                                    if (err === undefined) err = 'Неизвестная ошибка авторизации'
+                                }
+                            }
+                            dispatch('setInformation', {color:'error',timeout:-1, text:err})
+                        }
+                        reject(e)
+                    })
+                    .finally(()=>{
+                        dispatch('setLoading', false)
+                    })
+            })
         },
         logout({commit, dispatch}) {
             commit('CLEAR_USER')
-            dispatch('setFormData',{tableName: 'user_info', data:null})
+            dispatch('clearUserInfoData')
             dispatch('clearUserRoles')
         },
         getUserInfo({commit, dispatch, getters}, userId=null) {
@@ -228,6 +183,12 @@ export default {
         setUser({commit, dispatch}, info) {
             return new Promise((resolve, reject) => {
                 commit('SET_USER', info)
+                // подгрузим интерфейс пользователя
+                let rolesArray = info.roles.map(role=>{
+                    return role.name
+                })
+                dispatch('setUserUI',rolesArray)
+
                 dispatch('getUserInfo')
                     .then(response=>{
                         resolve(response)
@@ -330,9 +291,6 @@ export default {
         },
         user(state) {
             return state.user
-        },
-        userInterface(state) {
-            return state.userInterface
         },
         footerMenu(state) {
             return state.footerMenu

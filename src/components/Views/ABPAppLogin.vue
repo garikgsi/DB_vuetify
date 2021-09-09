@@ -87,8 +87,8 @@ export default {
           if (this.isAuth) this.$router.push({ name: "home" });
           else console.log("not auth");
         })
-        .catch((e) => {
-          console.log(`error ${e.response}`);
+        .catch(() => {
+          console.log(`auth error!`);
         })
         .finally(() => {
           this.loading = false;

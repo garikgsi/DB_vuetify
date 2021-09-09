@@ -17,34 +17,27 @@
                     :file="file"
                     :loading="loading"
                     :disabled="disabled"
-                    @makeMain="makeMain($event)"
+                    @makeMain="makeMain($event)" 
                     @editFile="editTheFile($event)"
                     @removeFile="removeFile($event)"
                 >
                 </image-box>
             </v-col>
         </v-row>
-        <div
+        <v-card
             v-else
+            tile
+            flat
         >
-            <v-banner>
-                <template v-slot:icon>
-                    <abp-icon-button
-                        icon="mdi-plus"
-                        tip="Добавить изображение"
-                        :color="color"
-                        @click="addFile"
-                    ></abp-icon-button>
-                </template>
+            <v-card-text>
                 Пока нет изображений
-            </v-banner>
-        </div>
+            </v-card-text>
+        </v-card>
     </div>
 </template>
 
 <script>
     import ImageBox from './ImageBox.vue'
-    import ABPIconButton from './Form/ABPIconButton'
 
     export default {
         name: 'image-list',
@@ -72,7 +65,6 @@
         },
         components:{
             'image-box' : ImageBox,
-            'abp-icon-button' : ABPIconButton
         },
         methods: {
             makeMain(id) {

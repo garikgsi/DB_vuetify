@@ -28,6 +28,7 @@
             :with-close-button="false"
             :closable="false"
             :disabled="stepperDisabled"
+            class="py-2"
             @validated="formValidated($event)"
             @loaded="ste1FormLoaded = true"
           >
@@ -35,6 +36,7 @@
               <v-btn
                 :disabled="!ste1FormLoaded || !formValid"
                 color="primary"
+                class="my-2"
                 @click="save"
               >
                 Далее
@@ -45,7 +47,9 @@
         <!-- проверки -->
         <v-stepper-content :step="2">
           <v-card :disabled="stepperDisabled">
-            <v-card-text>
+            <v-card-text
+              class="px-0"
+            >
               <abp-production-items-table
                 :data="val"
               ></abp-production-items-table>
@@ -111,7 +115,7 @@
       </v-stepper-items>
     </v-stepper>
     <v-row>
-      <v-col class="d-flex align-end flex-column">
+      <v-col class="d-flex align-end flex-column ma-4">
         <v-btn text @click.stop="closeAction">
           Закрыть
         </v-btn>
@@ -324,10 +328,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.clickable-step {
-  cursor: pointer;
-}
-.menu-btn {
-  margin-left: 0.5rem;
-}
+  .clickable-step {
+    cursor: pointer;
+  }
+  .menu-btn {
+    margin-left: 0.5rem;
+  }
+  .v-stepper__content {
+    padding: 0 !important;
+  }
 </style>

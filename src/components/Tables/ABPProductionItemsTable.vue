@@ -34,18 +34,36 @@
         >
           <!-- действия в строке компонентов изделия -->
           <template v-slot:[`actions`]="{ item }">
-            <abp-icon-button
-              :icon="replaceIcon"
-              tip="Заменить компонент изделия"
-              @click="componentReplace(item)"
-            ></abp-icon-button>
-            <!-- удаление -->
-            <abp-delete-button
-              title="Подтвердите удаление"
-              text="Сейчас будет удален компонент из выбранного изделия. Продолжаем?"
-              tip="Удалить компонент"
-              @click="deleteItemComponent(item)"
-            ></abp-delete-button>
+            <div
+              v-if="isMobile"
+            >
+              <v-btn
+                text
+                color="primary"
+                @click="componentReplace(item)"
+              >
+                Замены
+              </v-btn>
+            </div>
+            <div
+              v-else
+            >
+              <abp-icon-button
+                :icon="replaceIcon"
+                tip="Заменить компонент изделия"
+                @click="componentReplace(item)"
+              ></abp-icon-button>
+            </div>
+              <!-- удаление -->
+              <abp-delete-button
+                title="Подтвердите удаление"
+                :icon="!isMobile"
+                color="primary"
+                text="Сейчас будет удален компонент из выбранного изделия. Продолжаем?"
+                tip="Удалить компонент"
+                btn-text="Удалить"
+                @click="deleteItemComponent(item)"
+              ></abp-delete-button>
           </template>
         </abp-items-table>
         <abp-items-table
@@ -58,25 +76,56 @@
       </template>
       <!-- действия в шапке таблицы -->
       <template v-slot:append-top-actions>
-        <abp-icon-button
-          :disabled="treeType"
-          :icon="addIcon"
-          tip="Добавить компонент в партию продукции (для каждого изделия)"
-          @click="addComponent()"
-        ></abp-icon-button>
-        <abp-icon-button
-          :disabled="undeletedReplacements.length <= 0"
-          :icon="replaceIcon"
-          :tip="productionTableHint"
-          @click="productionReplaceTable()"
-        ></abp-icon-button>
+        <div
+          v-if="isMobile"
+        >
+          <v-btn
+            :disabled="treeType"
+            text
+            @click="addComponent()"
+          >
+            Добавить
+          </v-btn>
+          <v-btn
+            :disabled="undeletedReplacements.length <= 0"
+            text
+            @click="productionReplaceTable()"
+          >
+            Замены
+          </v-btn>
+        </div>
+        <div
+          v-else
+        >
+          <abp-icon-button
+            :disabled="treeType"
+            :icon="addIcon"
+            tip="Добавить компонент в партию продукции (для каждого изделия)"
+            @click="addComponent()"
+          ></abp-icon-button>
+          <abp-icon-button
+            :disabled="undeletedReplacements.length <= 0"
+            :icon="replaceIcon"
+            :tip="productionTableHint"
+            @click="productionReplaceTable()"
+          ></abp-icon-button>
+        </div>
       </template>
       <!-- действия в большой таблице -->
       <template v-slot:[`item.actions`]="{ item }">
         <!-- действия в режиме дерева -->
         <div v-if="treeType">
           <!-- добавление компонентов в режиме tree -->
+          <v-btn
+            v-if="isMobile"
+            text
+            color="primary"
+            @click="addComponent(item)"
+          >
+            Добавить компонент
+          </v-btn>
           <abp-icon-button
+            v-else
             :icon="addIcon"
             tip="Добавить компонент в изделие"
             @click="addComponent(item)"
@@ -85,7 +134,16 @@
         <!-- действия в режиме списка компонентов -->
         <div v-else>
           <!-- замены -->
+          <v-btn
+            v-if="isMobile"
+            color="primary"
+            text
+            @click="productionReplace(item)"
+          >
+            Замены
+          </v-btn>
           <abp-icon-button
+            v-else
             :icon="replaceIcon"
             tip="Заменить компонент изделия"
             @click="productionReplace(item)"
@@ -93,8 +151,10 @@
           <!-- удаление -->
           <abp-delete-button
             title="Подтвердите удаление"
+            :icon="!isMobile"
             text="Сейчас будет удален компонент из всего производства. Продолжаем?"
             tip="Удалить компонент"
+            btn-text="Удалить"
             @click="deleteComponent(item)"
           ></abp-delete-button>
         </div>
@@ -103,14 +163,14 @@
       <template v-slot:append-top>
         <div v-if="showReplacesTable">
           <v-row dense>
-            <v-col cols="6">
+            <v-col cols="12" md="6">
               <v-list>
                 <v-subheader>Замены на уровне всего производства</v-subheader>
                 <v-list-item-group color="primary">
                   <template v-for="(r, i) in globalReplacements">
                     <div :key="`gr_${i}`">
                       <v-list-item @click="replaceEdit(r)">
-                        <v-list-item-icon>
+                        <v-list-item-icon v-if="!isMobile">
                           <v-chip
                             :color="r.save_to_recipe ? 'primary' : 'secondary'"
                             small
@@ -119,7 +179,26 @@
                           </v-chip>
                         </v-list-item-icon>
                         <v-list-item-content>
-                          <v-list-item-title>
+                          <template
+                            v-if="isMobile"
+                          >
+                            <v-list-item-subtitle>{{ r.nomenklatura_from }}</v-list-item-subtitle>
+                            <v-list-item-subtitle>
+                              <v-chip
+                                :color="r.save_to_recipe ? 'primary' : 'secondary'"
+                                small
+                              >
+                                {{ r.kolvo_from }}:{{ r.kolvo_to }}
+                              </v-chip>
+                              <v-icon>
+                                mdi-swap-vertical
+                              </v-icon>
+                            </v-list-item-subtitle>
+                            <v-list-item-subtitle>{{ r.nomenklatura_to }}</v-list-item-subtitle>
+                          </template>
+                          <v-list-item-title
+                            v-else
+                          >
                             {{ r.nomenklatura_from }}
                             <v-icon>mdi-swap-horizontal</v-icon>
                             {{ r.nomenklatura_to }}
@@ -142,7 +221,7 @@
                 </v-list-item-group>
               </v-list>
             </v-col>
-            <v-col cols="6">
+            <v-col cols="12" md="6">
               <v-list>
                 <v-subheader>Замены на уровне изделий</v-subheader>
                 <template v-for="(p, i) in componentReplacements">
@@ -158,7 +237,9 @@
                       <template v-for="(r, j) in p.components">
                         <div :key="`crc_${j}`">
                           <v-list-item @click="replaceEdit(r)">
-                            <v-list-item-icon>
+                            <v-list-item-icon
+                              v-if="!isMobile"
+                            >
                               <v-chip
                                 :color="
                                   r.save_to_recipe ? 'primary' : 'secondary'
@@ -169,7 +250,27 @@
                               </v-chip>
                             </v-list-item-icon>
                             <v-list-item-content>
-                              <v-list-item-title>
+                              <template
+                                v-if="isMobile"
+                              >
+                                <v-list-item-subtitle>{{ r.nomenklatura_from }}</v-list-item-subtitle>
+                                <v-list-item-subtitle>
+                                  <v-chip
+                                    :color="r.save_to_recipe ? 'primary' : 'secondary'"
+                                    small
+                                  >
+                                    {{ r.kolvo_from }}:{{ r.kolvo_to }}
+                                  </v-chip>
+                                  <v-icon>
+                                    mdi-swap-vertical
+                                  </v-icon>
+                                </v-list-item-subtitle>
+                                <v-list-item-subtitle>{{ r.nomenklatura_to }}</v-list-item-subtitle>
+                              </template>
+
+                              <v-list-item-title
+                                v-else
+                              >
                                 {{ r.nomenklatura_from }}
                                 <v-icon>mdi-swap-horizontal</v-icon>
                                 {{ r.nomenklatura_to }}
@@ -178,6 +279,7 @@
                             <v-list-item-icon>
                               <abp-delete-button
                                 title="Подтвердите удаление"
+                                :icon="isMobile"
                                 text="Замена будет удалена и восстановить ее будет невозможно. Продолжаем?"
                                 tip="Удалить замену"
                                 @click="replaceDelete(r)"
@@ -229,7 +331,7 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import Vue from "vue";
 import ABPDialogVue from "../Dialogs/ABPDialog.vue";
 import ABPDeleteButtonVue from "../Form/ABPDeleteButton.vue";
@@ -316,6 +418,7 @@ export default {
   },
   created() {},
   computed: {
+    ...mapGetters(['isMobile']),
     // склад
     sklad_id() {
       return this.data ? this.data.sklad_id : null;
@@ -437,6 +540,11 @@ export default {
         });
         // если есть замены
         row.has_replacements = row.replacements.length > 0;
+        // добавляем строки для мобильной таблицы
+        row.lines = [
+          `${row.nomenklatura}`,
+          `Кол-во: ${row.kolvo}, остаток ${row.delta}`
+        ]
         // добавляем строку
         res.push(row);
       }
@@ -516,9 +624,16 @@ export default {
               replace.nomenklatura_from_id == component.nomenklatura_id
             );
           });
-          return { ...component, ...res };
+          res.lines = [
+            `${component.nomenklatura}`,
+            `Кол-во: ${component.kolvo}`
+          ]
+          return { ...component, ...res};
         });
-        return { ...item, ...{ components: components } };
+        let lines = [
+          `${item.nomenklatura} SN ${item.serial}`
+        ]
+        return { ...item, ...{ components: components }, ...{lines:lines} };
       });
     },
     // модель для таблицы изделий

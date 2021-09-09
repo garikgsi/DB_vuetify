@@ -6,24 +6,28 @@
         :disabled="disabled"
         @confirmPress="click"
     >
-        <slot>
+        <template v-slot:activator="{ on, attrs }">
             <abp-icon-button
-                v-if="icon"
-                :icon="icon"
+                v-if="withIcon"
+                :icon="iconName"
                 :tip="tip"
                 :clickStop="true"
                 :disabled="disabled"
+                v-on="on"
+                v-bind="attrs"
                 @click="showConfirmForm = !showConfirmForm"
             ></abp-icon-button>
             <v-btn
                 v-else
+                text
                 @click="showConfirmForm = !showConfirmForm"
                 :disabled="disabled"
-                v-bind="btnProps"
+                v-bind="{...btnProps, ...attrs}"
+                v-on="on"
             >
                 {{btnText}}
             </v-btn>
-        </slot>
+        </template>
     </confirm>
 </template>
 
@@ -67,9 +71,9 @@ import ABPIconButtonVue from './ABPIconButton.vue'
             },
             // иконка
             icon: {
-                type : String,
+                type : [String, Boolean],
                 required: false,
-                default: 'mdi-delete'
+                default: true
             },
             disabled: {
                 type: Boolean,
@@ -91,7 +95,8 @@ import ABPIconButtonVue from './ABPIconButton.vue'
         },
         data() {
             return {
-                showConfirmForm: false
+                showConfirmForm: false,
+                defaultIcon : 'mdi-delete'
             }
         },
         methods: {
@@ -105,6 +110,17 @@ import ABPIconButtonVue from './ABPIconButton.vue'
         computed: {
             tabIndex() {
                 return this.disableTab ? -1 : null
+            },
+            // наименование значка
+            iconName() {
+                if (typeof(this.icon)==='string') {
+                    return this.icon
+                }
+                return this.defaultIcon
+            },
+            // с иконкой?
+            withIcon() {
+                return this.icon !== false || this.icon === undefined
             }
         }
     }

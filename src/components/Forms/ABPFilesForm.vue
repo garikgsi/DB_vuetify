@@ -1,9 +1,9 @@
 <template>
   <div>
+    <!-- {{values}} -->
     <abp-simple-form
-      v-model="values"
-      :model="model"
-      :values="values"
+      :inputValue="values"
+      :model="model" 
       :singleFieldRow="true"
       @submit="submit"
       @input="changeInput($event)"

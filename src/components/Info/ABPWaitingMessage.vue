@@ -5,17 +5,25 @@
                 align="center"
                 no-gutters
             >
-                <v-col class="grow">
+                <v-col 
+                    class="grow"
+                    cols="12"
+                    md="6"
+                >
                     <slot></slot>
                 </v-col>
                 <v-spacer
                     :color="color"
                 ></v-spacer>
-                <v-col class="shrink">
+                <v-col 
+                    class="shrink text-right my-4 my-md-1"
+                    cols="12"
+                    md="6"
+                >
                 <v-btn
                     text
                     :color="color"
-                    :to="prevRoute"
+                    @click="goBack"
                     :replace="true"
                 >
                     Надоело ждать
@@ -49,6 +57,11 @@
         computed: {
             ...mapGetters(['prevRoute']),
         },
+        methods: {
+            goBack() {
+                this.$router.go(-1)
+            }
+        }
     }
 </script>
 

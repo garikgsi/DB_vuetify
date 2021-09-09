@@ -88,6 +88,15 @@
             :kolvo="1"
         >
         </abp-nomenklatura-series> -->
+    <!-- <abp-waiting-message>
+          Подождите, нам нужно много чего еще сделать чтобы вы смогли все это увидеть....
+        </abp-waiting-message> -->
+    <!-- <abp-table-files-extension
+          table="nomenklatura"
+          id="141"
+          type="image"
+        >
+        </abp-table-files-extension> -->
   </div>
 </template>
 
@@ -107,6 +116,7 @@ import { mapGetters, mapActions } from "vuex";
 // import ProductionReplaceFormVue from '../Forms/ProductionReplaceForm.vue'
 // import ABPNomenklaturaSeriesVue from '../Form/ABPNomenklaturaSeries.vue'
 // import ABPNomenklaturaSeriesEditorVue from '../Form/ABPNomenklaturaSeriesEditor.vue'
+// import ABPWaitingMessage from '../Info/ABPWaitingMessage.vue'
 
 export default {
   components: {
@@ -123,6 +133,8 @@ export default {
     // 'production-replace-form': ProductionReplaceFormVue,
     // 'abp-nomenklatura-series' : ABPNomenklaturaSeriesVue,
     // 'abp-nomenklatura-series-editor' : ABPNomenklaturaSeriesEditorVue
+    // "abp-waiting-message": () => import("../Info/ABPWaitingMessage.vue"),
+    // "abp-table-files-extension": () => import ("../Form/ABPTableFilesExtension.vue")
   },
   created() {
     // получим информацию о пользователе

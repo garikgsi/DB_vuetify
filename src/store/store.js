@@ -13,6 +13,7 @@ import permissions from './modules/permissions.js'
 import stock_balance from './modules/tables/stock_balance.js'
 import serials from './modules/tables/serials.js'
 import groups from './modules/groups.js'
+import ui from './modules/ui.js'
 
 Vue.use(Vuex)
 
@@ -24,7 +25,8 @@ export default new Vuex.Store({
         permissions,
         stock_balance,
         groups,
-        serials
+        serials,
+        ui
     },
 
     state: {
@@ -51,8 +53,8 @@ export default new Vuex.Store({
         moduleItems: null,
         error: null,
         contentTableLoading: false,
-        contentTableData:[],
-        contentTableDataTotal:0,
+        contentTableData: [],
+        contentTableDataTotal: 0,
         contentTableOptions: Constants.defaultTableOptions,
         contentLoadedFor: 0,
 
@@ -104,7 +106,7 @@ export default new Vuex.Store({
         SET_CONTENT(state, payload) {
             state.content = Object.assign({}, payload)
         },
-        SET_CONTENT_LOADED_FOR(state,payload) {
+        SET_CONTENT_LOADED_FOR(state, payload) {
             state.contentLoadedFor = payload
         },
         SET_CONTENT_MENU_POINT_ID(state, payload) {
@@ -122,151 +124,151 @@ export default new Vuex.Store({
             state.models[payload.table].total = payload.total
         },
         INIT_TABLE(state, table) {
-            state.models[table] = {...Constants.tableInitOptions}
+            state.models[table] = { ...Constants.tableInitOptions }
         }
     },
     actions: {
 
 
-        setContentTableLoading({commit}, payload) {
-            commit('SET_CONTENT_TABLE_LOADING',payload)
+        setContentTableLoading({ commit }, payload) {
+            commit('SET_CONTENT_TABLE_LOADING', payload)
         },
-        setError({commit},payload) {
-            commit('SET_ERROR',payload)
+        setError({ commit }, payload) {
+            commit('SET_ERROR', payload)
         },
-        setActiveTab({commit},curTab) {
-            commit('SET_ACTIVE_TAB',curTab)
+        setActiveTab({ commit }, curTab) {
+            commit('SET_ACTIVE_TAB', curTab)
             // if (curTab==1) {
             //     dispatch('fetchContent',this.state.curMenuPoint.id)
             // }
         },
-        setDefaultActiveTab({commit}) {
-            commit('SET_ACTIVE_TAB',Constants.defaultTab)
+        setDefaultActiveTab({ commit }) {
+            commit('SET_ACTIVE_TAB', Constants.defaultTab)
         },
-        setCurMenuPoint({commit}, payload) {
-            commit('SET_MENU_POINT',payload)
+        setCurMenuPoint({ commit }, payload) {
+            commit('SET_MENU_POINT', payload)
         },
-        fetchModuleItems({commit}) {
+        fetchModuleItems({ commit }) {
             Services.getSiteModules().then(response => {
                 // console.log('module_items loading')
                 commit('SET_MODULE_ITEMS', response.data.data)
-            }).catch(e=>{
-                commit('SET_ERROR',`Не могу загрузить список модулей. Возникла ошибка ${e.response.data.error}`)
+            }).catch(e => {
+                commit('SET_ERROR', `Не могу загрузить список модулей. Возникла ошибка ${e.response.data.error}`)
             })
         },
-        fetchSiteTree({commit}) {
+        fetchSiteTree({ commit }) {
             Services.getSiteTree().then(response => {
                 // console.log(JSON.stringify(response))
                 commit('SET_SITE_TREE', response.data.data)
-            }).catch(e=>{
-                commit('SET_ERROR',`Не могу загрузить дерево разделов сайта. Возникла ошибка ${e.response.data.error}`)
+            }).catch(e => {
+                commit('SET_ERROR', `Не могу загрузить дерево разделов сайта. Возникла ошибка ${e.response.data.error}`)
             })
         },
-        getMenuPointById({commit, dispatch},id) {
+        getMenuPointById({ commit, dispatch }, id) {
             Services.getMenuPointById(id).then(response => {
                 commit('SET_MENU_POINT', response.data.data)
-            }).catch(e=>{
-                commit('SET_ERROR',`Не могу найти раздел сайта с id=${id}. Возникла ошибка ${e.response.data.error}`)
+            }).catch(e => {
+                commit('SET_ERROR', `Не могу найти раздел сайта с id=${id}. Возникла ошибка ${e.response.data.error}`)
                 dispatch('setDefaultMenuPoint')
             })
         },
-        setDefaultMenuPoint({commit}) {
-            commit('SET_MENU_POINT',Constants.defaultMenuPoint)
+        setDefaultMenuPoint({ commit }) {
+            commit('SET_MENU_POINT', Constants.defaultMenuPoint)
         },
-        setChildMenuPoint({commit},parentId) {
+        setChildMenuPoint({ commit }, parentId) {
             let menuPointSettings = {
-                parent_menu_point:parentId,
+                parent_menu_point: parentId,
                 // TODO:посчитать num_order по родительскому разделу
             }
-            commit('SET_MENU_POINT',Object.assign(Constants.defaultMenuPoint,menuPointSettings))
+            commit('SET_MENU_POINT', Object.assign(Constants.defaultMenuPoint, menuPointSettings))
         },
-        saveMenuPoint({commit, dispatch}, curMenuPoint) {
-            return new Promise((resolve,reject)=>{
+        saveMenuPoint({ commit, dispatch }, curMenuPoint) {
+            return new Promise((resolve, reject) => {
                 Services.saveMenuPoint(curMenuPoint).then(response => {
-                        // post
-                    if (curMenuPoint.id==0) {
+                    // post
+                    if (curMenuPoint.id == 0) {
                         commit('SET_MENU_POINT', response.data.data)
                         // TODO:добавить в дерево siteTree
                     } else {
                         // put
-                        dispatch('getMenuPointById',curMenuPoint.id)
+                        dispatch('getMenuPointById', curMenuPoint.id)
                     }
                     resolve(true)
-                }).catch(e=>{
+                }).catch(e => {
                     let err = `Не могу сохранить пункт меню. Возникла ошибка ${e.response.data.error}`
                     commit('SET_ERROR', err)
                     reject(new Error(err))
                 })
             })
         },
-        deleteMenuPoint({commit},id) {
-            return new Promise((resolve,reject)=>{
-                Services.deleteMenuPoint(id).then((response)=>{
+        deleteMenuPoint({ commit }, id) {
+            return new Promise((resolve, reject) => {
+                Services.deleteMenuPoint(id).then((response) => {
                     resolve(response)
-                }).catch(e=>{
+                }).catch(e => {
                     let err = `Не могу удалить пункт меню с id=${id}. Возникла ошибка ${JSON.stringify(e.response.data.error)}`
                     commit('SET_ERROR', err)
                     reject(new Error(err))
                 })
             })
         },
-        setActiveTreeNode({commit},menuPointId) {
+        setActiveTreeNode({ commit }, menuPointId) {
             commit('SET_TREE_NODE', menuPointId)
             // dispatch('setContentMenuPointId',menuPointId)
         },
-        setContentTableOptions({commit},payload) {
+        setContentTableOptions({ commit }, payload) {
             commit('SET_CONTENT_TABLE_OPTIONS', payload)
         },
-        fetchContent({commit, getters},menu_point_id) {
-            return new Promise((resolve,reject)=>{
+        fetchContent({ commit, getters }, menu_point_id) {
+            return new Promise((resolve, reject) => {
                 // if (state.contentLoadedFor===0) {
-                    commit('SET_CONTENT_TABLE_LOADING',true)
-                    Services.getContentTable(menu_point_id, getters.contentTableOptions).then(response => {
-                        if (response.data) {
-// console.log(`loaded ${JSON.stringify(response.data)}`)
-                            if (getters.menuPointListable) {
-                                commit('SET_CONTENT_TABLE', response.data.data)
-                                commit('SET_CONTENT_LOADED_FOR',menu_point_id)
-                                if (response.data.count) commit('SET_CONTENT_TABLE_TOTAL',response.data.count)
-// console.log(`data is ${JSON.stringify(getters.contentTableData)}`)
-                            } else {
-                                if (!!response.data.data && response.data.data.length>0)
-                                commit('SET_CONTENT', response.data.data[0])
-                                commit('SET_CONTENT_LOADED_FOR',menu_point_id)
-                                commit('SET_CONTENT_TABLE_TOTAL',0)
-                            }
-                            // commit('SET_CONTENT_MENU_POINT',menu_point_id)
+                commit('SET_CONTENT_TABLE_LOADING', true)
+                Services.getContentTable(menu_point_id, getters.contentTableOptions).then(response => {
+                    if (response.data) {
+                        // console.log(`loaded ${JSON.stringify(response.data)}`)
+                        if (getters.menuPointListable) {
+                            commit('SET_CONTENT_TABLE', response.data.data)
+                            commit('SET_CONTENT_LOADED_FOR', menu_point_id)
+                            if (response.data.count) commit('SET_CONTENT_TABLE_TOTAL', response.data.count)
+                            // console.log(`data is ${JSON.stringify(getters.contentTableData)}`)
                         } else {
-                            commit('SET_ERROR',`Ответ от сервера не получен`)
+                            if (!!response.data.data && response.data.data.length > 0)
+                                commit('SET_CONTENT', response.data.data[0])
+                            commit('SET_CONTENT_LOADED_FOR', menu_point_id)
+                            commit('SET_CONTENT_TABLE_TOTAL', 0)
                         }
-                        resolve(true)
-                    }).catch(e=>{
-                        let err = `Не могу загрузить контент раздела. Возникла ошибка ${e.response.data.error}`
-                        commit('SET_ERROR', err)
-                        reject(new Error(err))
-                    }).finally(()=> {
-                        commit('SET_CONTENT_TABLE_LOADING',false)
-                    })
+                        // commit('SET_CONTENT_MENU_POINT',menu_point_id)
+                    } else {
+                        commit('SET_ERROR', `Ответ от сервера не получен`)
+                    }
+                    resolve(true)
+                }).catch(e => {
+                    let err = `Не могу загрузить контент раздела. Возникла ошибка ${e.response.data.error}`
+                    commit('SET_ERROR', err)
+                    reject(new Error(err))
+                }).finally(() => {
+                    commit('SET_CONTENT_TABLE_LOADING', false)
+                })
                 // } else {
                 //     resolve(state.contentLoadedFor)
                 // }
             })
         },
-        setContent({commit}, newContent) {
+        setContent({ commit }, newContent) {
             commit('SET_CONTENT', newContent)
         },
-        setDefaultContent({commit}) {
-            commit('SET_CONTENT',Constants.defaultContent)
-            commit('SET_CONTENT_TABLE',[])
-            commit('SET_CONTENT_LOADED_FOR',0)
+        setDefaultContent({ commit }) {
+            commit('SET_CONTENT', Constants.defaultContent)
+            commit('SET_CONTENT_TABLE', [])
+            commit('SET_CONTENT_LOADED_FOR', 0)
         },
-        setDefaultContentForm({commit}) {
-            commit('SET_CONTENT',Constants.defaultContent)
+        setDefaultContentForm({ commit }) {
+            commit('SET_CONTENT', Constants.defaultContent)
         },
-        setContentForm({commit,getters},id) {
-            return new Promise((resolve)=>{
+        setContentForm({ commit, getters }, id) {
+            return new Promise((resolve) => {
                 let contentArray = getters.contentTableData
-                let content = contentArray.find((contentItem)=>{
+                let content = contentArray.find((contentItem) => {
                     return contentItem.id === id
                 })
                 if (content) {
@@ -278,15 +280,15 @@ export default new Vuex.Store({
                 resolve()
             })
         },
-        setContentMenuPointId({commit},payload) {
-            commit('SET_CONTENT_MENU_POINT_ID',payload)
+        setContentMenuPointId({ commit }, payload) {
+            commit('SET_CONTENT_MENU_POINT_ID', payload)
         },
-        saveContent({commit, dispatch, getters}, content) {
+        saveContent({ commit, dispatch, getters }, content) {
             // промис для обработки результата - закрытия модального окна
-            return new Promise((resolve,reject)=>{
+            return new Promise((resolve, reject) => {
                 Services.saveContent(content, getters.menuPointId).then(response => {
-                        // post
-                    if (content.id==0) {
+                    // post
+                    if (content.id == 0) {
                         commit('SET_CONTENT', response.data.data)
                         commit('SET_CONTENT_LOADED_FOR', content.menu_point_id)
                     } else {
@@ -294,18 +296,18 @@ export default new Vuex.Store({
                         dispatch('fetchContent', content.menu_point_id)
                     }
                     resolve(true)
-                }).catch(e=>{
+                }).catch(e => {
                     let err = `Не могу сохранить контент. Возникла ошибка ${JSON.stringify(e.response.data.error)}`
                     commit('SET_ERROR', err)
                     reject(new Error(err))
                 })
             })
         },
-        deleteContent({commit},id) {
-            return new Promise((resolve,reject)=>{
-                Services.deleteContent(id).then((response)=>{
+        deleteContent({ commit }, id) {
+            return new Promise((resolve, reject) => {
+                Services.deleteContent(id).then((response) => {
                     resolve(response)
-                }).catch(e=>{
+                }).catch(e => {
                     let err = `Не могу удалить страницу контента с id=${id}. Возникла ошибка ${JSON.stringify(e.response.data.error)}`
                     commit('SET_ERROR', err)
                     reject(new Error(err))
@@ -313,21 +315,21 @@ export default new Vuex.Store({
             })
         },
         // ABP table
-        initTable({commit,state},table) {
-            return new Promise((resolve,reject) => {
+        initTable({ commit, state }, table) {
+            return new Promise((resolve, reject) => {
                 if (!state.models[table]) {
                     commit('INIT_TABLE', table)
                     Services.getModel(table).then(response => {
                         if (response.data.model) {
                             let model = JSON.parse(JSON.stringify(response.data.model))
-                            commit('SET_MODEL', {table:table, model:model})
+                            commit('SET_MODEL', { table: table, model: model })
                             resolve(model)
                         } else {
                             let err = `Сервер не передал модель таблицы ${table}`
-                            commit('SET_ERROR',err)
+                            commit('SET_ERROR', err)
                             reject(new Error(err))
                         }
-                    }).catch(e=>{
+                    }).catch(e => {
                         let err = `Не могу загрузить модель таблицы ${table}. Возникла ошибка ${e.response.data.error}`
                         commit('SET_ERROR', err)
                         reject(new Error(err))
@@ -338,28 +340,28 @@ export default new Vuex.Store({
 
             })
         },
-        fetchTableData({commit, state}, table) {
+        fetchTableData({ commit, state }, table) {
             if (!state.models[table]) commit('INIT_TABLE', table)
-            return new Promise((resolve,reject)=>{
-                commit('SET_CONTENT_TABLE_LOADING',true)
+            return new Promise((resolve, reject) => {
+                commit('SET_CONTENT_TABLE_LOADING', true)
                 Services.getTableData(table, state.models[table].tableOptions).then(response => {
                     if (response.data) {
-                            commit('SET_TABLE_DATA', {table:table, data:response.data.data})
-                            if (response.data.count) commit('SET_TABLE_DATA_TOTAL',{table: table, total: response.data.count})
+                        commit('SET_TABLE_DATA', { table: table, data: response.data.data })
+                        if (response.data.count) commit('SET_TABLE_DATA_TOTAL', { table: table, total: response.data.count })
                     } else {
-                        commit('SET_ERROR',`Ответ от сервера не получен`)
+                        commit('SET_ERROR', `Ответ от сервера не получен`)
                     }
                     resolve(true)
-                }).catch(e=>{
+                }).catch(e => {
                     let err = `Не могу загрузить контент раздела. Возникла ошибка ${e.response.data.error}`
                     commit('SET_ERROR', err)
                     reject(new Error(err))
-                }).finally(()=> {
-                    commit('SET_CONTENT_TABLE_LOADING',false)
+                }).finally(() => {
+                    commit('SET_CONTENT_TABLE_LOADING', false)
                 })
             })
         },
-        setTableOptions({commit},payload) {
+        setTableOptions({ commit }, payload) {
             commit('SET_TABLE_OPTIONS', payload)
         },
 
@@ -401,14 +403,14 @@ export default new Vuex.Store({
             return state.activeTreeNodeId
         },
         treeNodeSelected(state) {
-            return state.activeTreeNodeId>1
+            return state.activeTreeNodeId > 1
         },
         urlRules() {
             return Constants.urlRules
         },
         menuPointListable(state) {
-            let listableModules = [3,4,5]
-            return listableModules.indexOf(parseInt(state.curMenuPoint.module_id))!==-1
+            let listableModules = [3, 4, 5]
+            return listableModules.indexOf(parseInt(state.curMenuPoint.module_id)) !== -1
         },
         contentTableHeaders() {
             return Constants.contentTableHeaders
