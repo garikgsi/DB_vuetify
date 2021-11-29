@@ -113,7 +113,7 @@
               icon="mdi-restore"
               tip="Восстановить строку"
               :color="color"
-              :disabled="readonly"
+              :disabled="readonly || disabled"
               @click="restoreRow"
             ></abp-icon-button>
           </div>
@@ -122,7 +122,7 @@
               icon="mdi-close"
               tip="Удалить строку"
               color="error"
-              :disabled="readonly"
+              :disabled="readonly || disabled"
               @click="removeRow"
             ></abp-icon-button>
           </div>
@@ -138,11 +138,12 @@
         :clearable="false"
         :required="!deleted"
         :readonly="readonly"
-        :disabled="deleted"
+        :disabled="deleted || disabled"
         dense
         @loaded="fieldLoaded(col)"
       ></nomenklatura-input>
-      <abp-select-input
+      <!-- <abp-select-input -->
+      <abp-select
         :id="`${rowId}_col_${colIndex}`"
         v-else-if="col.type == 'select'"
         :table="col.table"
@@ -150,10 +151,11 @@
         :clearable="false"
         :required="!deleted"
         :readonly="readonly"
-        :disabled="deleted"
+        :disabled="deleted || disabled"
         dense
         @loaded="fieldLoaded(col)"
-      ></abp-select-input>
+      ></abp-select>
+      <!-- ></abp-select-input> -->
       <money-input
         :id="`${rowId}_col_${colIndex}`"
         v-else-if="col.type == 'money'"
@@ -162,7 +164,7 @@
         dense
         :require="!deleted"
         :readonly="readonly"
-        :disabled="deleted"
+        :disabled="deleted || disabled"
         @change="changeInput($event, col)"
         @loaded="fieldLoaded(col.value)"
       ></money-input>
@@ -174,7 +176,7 @@
         dense
         :require="!deleted"
         :readonly="readonly"
-        :disabled="deleted"
+        :disabled="deleted || disabled"
         @change="changeInput($event, col)"
         @loaded="fieldLoaded(col.value)"
       ></kolvo-input>
@@ -182,12 +184,12 @@
         :id="`${rowId}_col_${colIndex}`"
         v-else-if="col.type == 'stock_balance'"
         v-model="row[col.value]"
-        :sklad-id="skladId"
+        :sklad_id="skladId"
         :clearable="false"
         dense
         :required="!deleted"
         :readonly="readonly"
-        :disabled="deleted"
+        :disabled="deleted || disabled"
         @change="changeInput($event, col)"
         @loaded="fieldLoaded(col.value)"
       ></stock-balance-input>
@@ -200,7 +202,7 @@
         dense
         :require="!deleted"
         :readonly="readonly"
-        :disabled="deleted"
+        :disabled="deleted || disabled"
         @change="changeInput($event, col)"
         @loaded="fieldLoaded(col.value)"
       ></text-input>
@@ -210,24 +212,26 @@
 
 <script>
 import { mapGetters } from "vuex";
-import ABPSelectInput from "../Form/ABPSelectInput";
+// import ABPSelectInput from "../Form/ABPSelectInput";
 import TextInput from "../Form/TextInput";
 import ABPIconButton from "../Form/ABPIconButton";
 import MoneyInputVue from "../Form/MoneyInput.vue";
 import KolvoInputVue from "../Form/KolvoInput.vue";
 import StockBalanceInputVue from "../Form/StockBalanceInput.vue";
 import NomenklaturaInputVue from "../Form/NomenklaturaInput.vue";
+import ABPSelectVue from "../Form/ABPSelect.vue";
 
 export default {
   name: "abp-document-table-row",
   components: {
-    "abp-select-input": ABPSelectInput,
+    // "abp-select-input": ABPSelectInput,
     "nomenklatura-input": NomenklaturaInputVue,
     "text-input": TextInput,
     "money-input": MoneyInputVue,
     "kolvo-input": KolvoInputVue,
     "stock-balance-input": StockBalanceInputVue,
     "abp-icon-button": ABPIconButton,
+    "abp-select": ABPSelectVue,
   },
   model: {
     prop: "row",
@@ -297,6 +301,12 @@ export default {
     },
     // удаленная строка
     deleted: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // отключен интерактивный функционал
+    disabled: {
       type: Boolean,
       required: false,
       default: false,

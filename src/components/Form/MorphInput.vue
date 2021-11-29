@@ -19,6 +19,7 @@
       :readonly="readonly"
       :clearable="false"
       v-model="id"
+      :options="selectOptions"
     ></abp-select-input>
   </div>
 </template>
@@ -88,6 +89,12 @@ export default {
     };
   },
   computed: {
+    // опции выборки данных
+    selectOptions() {
+      return {
+        page: 1,
+      };
+    },
     dataLoaded() {
       return this.tablesLoaded == this.typeItems.length;
     },

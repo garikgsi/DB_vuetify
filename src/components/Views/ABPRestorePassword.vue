@@ -12,15 +12,10 @@
           :singleFieldRow="true"
         >
           <template v-slot:[`buttons-right`]>
-            <v-btn
-              :href="forgotPasswordLink"
-              target="_blank"
-              text
-              color="primary"
-            >
-              Забыл пароль
+            <v-btn to="/login" color="primary">
+              авторизация
             </v-btn>
-            <v-btn :href="RegisterLink" target="_blank" color="primary">
+            <v-btn to="/register" color="primary">
               Регистрация
             </v-btn>
           </template>
@@ -50,20 +45,6 @@ export default {
           icon: "mdi-account",
           showAction: false,
         },
-        {
-          name: "password",
-          title: "Пароль",
-          type: "password",
-          require: true,
-          icon: "mdi-lock",
-        },
-        {
-          name: "remember",
-          title: "Запомнить меня",
-          hint: "запомнить мои данные на 1 месяц",
-          type: "boolean",
-          default: false,
-        },
       ],
       values: {
         email: "",
@@ -76,10 +57,10 @@ export default {
     };
   },
   created() {
-    this.setTitle("Для работы с программой требуется авторизация");
+    this.setTitle("Восстановление пароля");
   },
   computed: {
-    ...mapGetters(["isAuth", "baseURL"]),
+    ...mapGetters(["isAuth"]),
     showInfo() {
       if (this.info) return true;
       else return false;
@@ -91,18 +72,11 @@ export default {
         return {};
       }
     },
-    // ссылка на восстановление пароля
-    forgotPasswordLink() {
-      return `${this.baseURL}/password/reset`;
-    },
-    // ссылка на регистрацию
-    RegisterLink() {
-      return `${this.baseURL}/register`;
-    },
   },
   methods: {
     ...mapActions(["setUser", "login", "setTitle"]),
     runAuth() {
+      this.loading = true;
       this.login(this.values)
         .then(() => {
           if (this.isAuth) this.$router.push({ name: "home" });
@@ -110,6 +84,9 @@ export default {
         })
         .catch(() => {
           console.log(`auth error!`);
+        })
+        .finally(() => {
+          this.loading = false;
         });
     },
   },

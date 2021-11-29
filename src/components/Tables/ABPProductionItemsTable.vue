@@ -34,36 +34,28 @@
         >
           <!-- действия в строке компонентов изделия -->
           <template v-slot:[`actions`]="{ item }">
-            <div
-              v-if="isMobile"
-            >
-              <v-btn
-                text
-                color="primary"
-                @click="componentReplace(item)"
-              >
+            <div v-if="isMobile">
+              <v-btn text color="primary" @click="componentReplace(item)">
                 Замены
               </v-btn>
             </div>
-            <div
-              v-else
-            >
+            <div v-else>
               <abp-icon-button
                 :icon="replaceIcon"
                 tip="Заменить компонент изделия"
                 @click="componentReplace(item)"
               ></abp-icon-button>
             </div>
-              <!-- удаление -->
-              <abp-delete-button
-                title="Подтвердите удаление"
-                :icon="!isMobile"
-                color="primary"
-                text="Сейчас будет удален компонент из выбранного изделия. Продолжаем?"
-                tip="Удалить компонент"
-                btn-text="Удалить"
-                @click="deleteItemComponent(item)"
-              ></abp-delete-button>
+            <!-- удаление -->
+            <abp-delete-button
+              title="Подтвердите удаление"
+              :icon="!isMobile"
+              color="primary"
+              text="Сейчас будет удален компонент из выбранного изделия. Продолжаем?"
+              tip="Удалить компонент"
+              btn-text="Удалить"
+              @click="deleteItemComponent(item)"
+            ></abp-delete-button>
           </template>
         </abp-items-table>
         <abp-items-table
@@ -76,14 +68,8 @@
       </template>
       <!-- действия в шапке таблицы -->
       <template v-slot:append-top-actions>
-        <div
-          v-if="isMobile"
-        >
-          <v-btn
-            :disabled="treeType"
-            text
-            @click="addComponent()"
-          >
+        <div v-if="isMobile">
+          <v-btn :disabled="treeType" text @click="addComponent()">
             Добавить
           </v-btn>
           <v-btn
@@ -94,9 +80,7 @@
             Замены
           </v-btn>
         </div>
-        <div
-          v-else
-        >
+        <div v-else>
           <abp-icon-button
             :disabled="treeType"
             :icon="addIcon"
@@ -179,13 +163,15 @@
                           </v-chip>
                         </v-list-item-icon>
                         <v-list-item-content>
-                          <template
-                            v-if="isMobile"
-                          >
-                            <v-list-item-subtitle>{{ r.nomenklatura_from }}</v-list-item-subtitle>
+                          <template v-if="isMobile">
+                            <v-list-item-subtitle>{{
+                              r.nomenklatura_from
+                            }}</v-list-item-subtitle>
                             <v-list-item-subtitle>
                               <v-chip
-                                :color="r.save_to_recipe ? 'primary' : 'secondary'"
+                                :color="
+                                  r.save_to_recipe ? 'primary' : 'secondary'
+                                "
                                 small
                               >
                                 {{ r.kolvo_from }}:{{ r.kolvo_to }}
@@ -194,11 +180,11 @@
                                 mdi-swap-vertical
                               </v-icon>
                             </v-list-item-subtitle>
-                            <v-list-item-subtitle>{{ r.nomenklatura_to }}</v-list-item-subtitle>
+                            <v-list-item-subtitle>{{
+                              r.nomenklatura_to
+                            }}</v-list-item-subtitle>
                           </template>
-                          <v-list-item-title
-                            v-else
-                          >
+                          <v-list-item-title v-else>
                             {{ r.nomenklatura_from }}
                             <v-icon>mdi-swap-horizontal</v-icon>
                             {{ r.nomenklatura_to }}
@@ -237,9 +223,7 @@
                       <template v-for="(r, j) in p.components">
                         <div :key="`crc_${j}`">
                           <v-list-item @click="replaceEdit(r)">
-                            <v-list-item-icon
-                              v-if="!isMobile"
-                            >
+                            <v-list-item-icon v-if="!isMobile">
                               <v-chip
                                 :color="
                                   r.save_to_recipe ? 'primary' : 'secondary'
@@ -250,13 +234,15 @@
                               </v-chip>
                             </v-list-item-icon>
                             <v-list-item-content>
-                              <template
-                                v-if="isMobile"
-                              >
-                                <v-list-item-subtitle>{{ r.nomenklatura_from }}</v-list-item-subtitle>
+                              <template v-if="isMobile">
+                                <v-list-item-subtitle>{{
+                                  r.nomenklatura_from
+                                }}</v-list-item-subtitle>
                                 <v-list-item-subtitle>
                                   <v-chip
-                                    :color="r.save_to_recipe ? 'primary' : 'secondary'"
+                                    :color="
+                                      r.save_to_recipe ? 'primary' : 'secondary'
+                                    "
                                     small
                                   >
                                     {{ r.kolvo_from }}:{{ r.kolvo_to }}
@@ -265,12 +251,12 @@
                                     mdi-swap-vertical
                                   </v-icon>
                                 </v-list-item-subtitle>
-                                <v-list-item-subtitle>{{ r.nomenklatura_to }}</v-list-item-subtitle>
+                                <v-list-item-subtitle>{{
+                                  r.nomenklatura_to
+                                }}</v-list-item-subtitle>
                               </template>
 
-                              <v-list-item-title
-                                v-else
-                              >
+                              <v-list-item-title v-else>
                                 {{ r.nomenklatura_from }}
                                 <v-icon>mdi-swap-horizontal</v-icon>
                                 {{ r.nomenklatura_to }}
@@ -418,7 +404,7 @@ export default {
   },
   created() {},
   computed: {
-    ...mapGetters(['isMobile']),
+    ...mapGetters(["isMobile"]),
     // склад
     sklad_id() {
       return this.data ? this.data.sklad_id : null;
@@ -449,39 +435,46 @@ export default {
     },
     // данные таблицы production_items
     items() {
-      return this.data.items.map((item) => {
-        let prod = {
-          id: item.id,
-          kolvo: item.kolvo,
-          nomenklatura: item.nomenklatura,
-          serial: item.serial,
-          components: item.components.map((component) => {
-            let stock_balance = this.getOstatok(component.nomenklatura_id);
-            let kolvo = parseFloat(component.kolvo);
-            let delta = kolvo > stock_balance ? stock_balance - kolvo : 0;
+      return this.data.items
+        ? this.data.items.map((item) => {
+            let prod = {
+              id: item.id,
+              kolvo: item.kolvo,
+              nomenklatura: item.nomenklatura,
+              serial: item.serial,
+              components: item.components
+                ? item.components.map((component) => {
+                    let stock_balance = this.getOstatok(
+                      component.nomenklatura_id
+                    );
+                    let kolvo = parseFloat(component.kolvo);
+                    let delta =
+                      kolvo > stock_balance ? stock_balance - kolvo : 0;
 
-            let comp = {
-              item_id: item.id,
-              id: component.id,
-              nomenklatura_id: component.nomenklatura_id,
-              kolvo: kolvo,
-              nomenklatura: component.nomenklatura,
-              stock_balance: stock_balance,
-              delta: delta,
-              replacements: this.replacements.filter((r) => {
-                return r.component_id == component.id && !r.deleted;
-              }),
+                    let comp = {
+                      item_id: item.id,
+                      id: component.id,
+                      nomenklatura_id: component.nomenklatura_id,
+                      kolvo: kolvo,
+                      nomenklatura: component.nomenklatura,
+                      stock_balance: stock_balance,
+                      delta: delta,
+                      replacements: this.replacements.filter((r) => {
+                        return r.component_id == component.id && !r.deleted;
+                      }),
+                    };
+                    comp.has_replacements = comp.replacements.length > 0;
+                    return comp;
+                  })
+                : [],
             };
-            comp.has_replacements = comp.replacements.length > 0;
-            return comp;
-          }),
-        };
-        prod.has_replacements =
-          prod.components.filter((comp) => {
-            return comp.has_replacements;
-          }).length > 0;
-        return prod;
-      });
+            prod.has_replacements =
+              prod.components.filter((comp) => {
+                return comp.has_replacements;
+              }).length > 0;
+            return prod;
+          })
+        : [];
     },
     // данные таблицы компонентов
     componentsData() {
@@ -543,8 +536,8 @@ export default {
         // добавляем строки для мобильной таблицы
         row.lines = [
           `${row.nomenklatura}`,
-          `Кол-во: ${row.kolvo}, остаток ${row.delta}`
-        ]
+          `Кол-во: ${row.kolvo}, остаток ${row.delta}`,
+        ];
         // добавляем строку
         res.push(row);
       }
@@ -585,10 +578,21 @@ export default {
           type: "text",
           show_in_table: false,
         },
-        { title: "Необходимое количество", name: "kolvo", type: "kolvo" },
-        { title: "Остаток на складе", name: "stock_balance", type: "kolvo" },
-        { title: "Не хватает", name: "delta", type: "kolvo" },
+        { title: "Количество", name: "kolvo", type: "kolvo" },
       ];
+      // return [
+      //   { title: "Есть замены", name: "has_replacements", type: "boolean" },
+      //   { title: "Компонент", name: "nomenklatura", type: "text" },
+      //   {
+      //     title: "Номенклатура",
+      //     name: "nomenklatura_id",
+      //     type: "text",
+      //     show_in_table: false,
+      //   },
+      //   { title: "Необходимое количество", name: "kolvo", type: "kolvo" },
+      //   { title: "Остаток на складе", name: "stock_balance", type: "kolvo" },
+      //   { title: "Не хватает", name: "delta", type: "kolvo" },
+      // ];
     },
     // заголовки таблицы в экспандере
     componentTableHeaders() {
@@ -626,14 +630,12 @@ export default {
           });
           res.lines = [
             `${component.nomenklatura}`,
-            `Кол-во: ${component.kolvo}`
-          ]
-          return { ...component, ...res};
+            `Кол-во: ${component.kolvo}`,
+          ];
+          return { ...component, ...res };
         });
-        let lines = [
-          `${item.nomenklatura} SN ${item.serial}`
-        ]
-        return { ...item, ...{ components: components }, ...{lines:lines} };
+        let lines = [`${item.nomenklatura} SN ${item.serial}`];
+        return { ...item, ...{ components: components }, ...{ lines: lines } };
       });
     },
     // модель для таблицы изделий
@@ -738,7 +740,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(["getSelectStockBalance"]),
+    ...mapActions(["getSelectData"]),
     // поиск остатка по id номенклатуры
     getOstatok(id) {
       // если уже находили
@@ -984,16 +986,19 @@ export default {
           this.closeComponentForm();
         }
       } else {
+        // console.log(`formData=${JSON.stringify(formData)}`);
         // если указано изделие
         // получим компоненты продукта
         let product = this.data.items.find((item) => {
           return item.id == formData.production_item_id;
         });
-        let productComponents = product.components;
+        let productComponents = product ? product.components : null;
         // поищем компонент в списке компонентах продукта
-        let existedComponent = productComponents.find((component) => {
-          return component.nomenklatura_id == formData.nomenklatura_id;
-        });
+        let existedComponent = productComponents
+          ? productComponents.find((component) => {
+              return component.nomenklatura_id == formData.nomenklatura_id;
+            })
+          : null;
         // если найден компонент и согласны его переписать
         if (existedComponent) {
           if (formData.with_replace) {
@@ -1020,14 +1025,15 @@ export default {
   // наблюдатели
   watch: {
     // за складом
-    sklad_id(newSkladId) {
-      if (newSkladId) {
-        // получим остатки по складу
-        this.getSelectStockBalance(newSkladId).then((data) => {
-          this.stockBalance = data;
-        });
-      }
-    },
+    // sklad_id(newSkladId) {
+    //   if (newSkladId) {
+    //     // получим остатки по складу
+    //     // getSelectData({commit, dispatch, getters, state}, {table, search, id, page, itemsPerPage, options}
+    //     this.getSelectStockBalance(newSkladId).then((data) => {
+    //       this.stockBalance = data;
+    //     });
+    //   }
+    // },
   },
 };
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div @click="val = false">
     <v-snackbar
       v-if="val"
       app
@@ -8,7 +8,7 @@
       dark
       :multi-line="true"
       :timeout="timeout"
-      :right="true"
+      :left="true"
     >
       <template v-slot:action>
         <v-btn icon @click="val = false">

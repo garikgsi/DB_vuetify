@@ -1,6 +1,7 @@
 <template>
   <div>
-    <abp-select-input
+    <!-- {{ optionsMixin }} -->
+    <abp-select
       table="nomenklatura"
       :inputValue="inputValue"
       :editable="false"
@@ -9,14 +10,12 @@
       :required="required"
       :readonly="readonly"
       :disabled="disabled"
-      :use-data-array="true"
-      :data-array="selectData"
-      :loading="isLoading"
-      :custom-param-form="true"
       :closable="closable"
+      :options="optionsMixin"
+      :tableParamsMixin="tableParams"
       dense
       @input="changeInput($event)"
-      @open-param-table="showDialog"
+      @loaded="loaded($event)"
     >
       <template v-slot:item="{ data }">
         <v-list-item-action>
@@ -28,40 +27,31 @@
             v-else
           ></stock-balance-chip>
         </v-list-item-action>
+        <!-- <v-list-item-avatar tile v-if="data.item.main_image">
+          <v-img :src="data.item.main_image"></v-img>
+        </v-list-item-avatar>
+        <v-list-item-icon v-else>
+          <v-icon color="grey lighten-1">mdi-image-remove</v-icon>
+        </v-list-item-icon>
+ -->
         <v-list-item-content>
           <v-list-item-title
             v-text="data.item.select_list_title"
           ></v-list-item-title>
         </v-list-item-content>
       </template>
-    </abp-select-input>
-    <!-- кастомный подбор по параметрам -->
-    <abp-dialog title="Подбор по параметрам" v-model="showParamsForm">
-      <abp-select-params-table
-        v-if="showParamsForm"
-        v-model="val"
-        table="nomenklatura"
-        :use-data-array="true"
-        :data-array="tableDataArray"
-        :array-count="dataArrayCount"
-        :table-params="tableParams"
-        @getData="openParamTable"
-        @selected="selectedFromParamsTable"
-      ></abp-select-params-table>
-    </abp-dialog>
+    </abp-select>
   </div>
 </template>
 
 <script>
-import { mapActions } from "vuex";
-
+import ABPSelectVue from "./ABPSelect.vue";
 export default {
   name: "stock-balance-input",
   components: {
-    "abp-select-input": () => import("./ABPSelectInput"),
+    // "abp-select-input": () => import("./ABPSelectInput"),
     "stock-balance-chip": () => import("../Misc/StockBalanceChip.vue"),
-    "abp-select-params-table": () => import("../Tables/ABPSelectParamsTable"),
-    "abp-dialog": () => import("../Dialogs/ABPDialog.vue"),
+    "abp-select": ABPSelectVue,
   },
   model: {
     prop: "inputValue",
@@ -71,7 +61,7 @@ export default {
     inputValue: {
       required: true,
     },
-    skladId: {
+    sklad_id: {
       type: [Number, String],
       required: true,
     },
@@ -108,7 +98,6 @@ export default {
   },
   data() {
     return {
-      loading: false,
       tableParams: {
         modelMixin: [
           { name: "ostatok", show_in_table: false },
@@ -120,14 +109,14 @@ export default {
           },
         ],
       },
-      showParamsForm: false,
-      item: {},
     };
   },
-  created() {
-    this.getStockBalance(this.skladId);
-  },
   computed: {
+    // передаем что данные выбирать из scope
+    optionsMixin() {
+      return { scope: `stock_balance.${this.sklad_id}` };
+    },
+    // значение
     val: {
       get() {
         return [this.inputValue];
@@ -136,142 +125,17 @@ export default {
         this.$emit("input", newVal[0].id);
       },
     },
-    selectData() {
-      if (this.$store.state.stock_balance.selectData[this.skladId]) {
-        let stockBalance = this.$store.state.stock_balance.selectData[
-          this.skladId
-        ].filter((item) => {
-          return parseFloat(item.stock_balance) > 0;
-        });
-        return Object.keys(this.item).length > 0
-          ? [...stockBalance, ...[this.item]]
-          : [...stockBalance];
-      }
-      return null;
-    },
-    tableDataArray() {
-      if (this.$store.state.stock_balance.tableData[this.skladId]) {
-        // return this.$store.state.stock_balance.tableData[this.skladId].filter(=>{
-        //     return parseFloat(item.stock_balance)>0
-        // })
-        return this.$store.state.stock_balance.tableData[this.skladId];
-      }
-      return null;
-    },
-    dataArrayCount() {
-      if (this.$store.state.stock_balance.count[this.skladId]) {
-        return this.$store.state.stock_balance.count[this.skladId];
-      }
-      return 0;
-    },
-    isLoading() {
-      return this.loading;
-    },
-    sklad() {
-      return this.skladId;
-    },
   },
   methods: {
-    ...mapActions([
-      "getSelectStockBalance",
-      "getTableStockBalance",
-      "getSelectData",
-    ]),
+    // передача значение вместо v-model
     changeInput(newValue) {
       this.$emit("input", newValue);
     },
+    // поле ввода загружено
     loaded(isLoaded) {
       if (isLoaded) {
         this.$emit("loaded");
       }
-    },
-    startLoading() {
-      this.loading = true;
-    },
-    endLoading() {
-      this.loading = false;
-    },
-    getStockBalance(skladId) {
-      // console.log(`get stock balance started`)
-      this.loaded(false);
-      if (!this.$store.state.stock_balance.selectData[this.skladId]) {
-        // console.log(`getting stock_balance`)
-        this.startLoading();
-        this.getSelectStockBalance(skladId)
-          .then(() => {
-            // console.log(`stock balance for ${skladId} loaded`)
-            if (this.inputValue > 1) {
-              if (this.selectData) {
-                // если в полученных данных нет такого наименования
-                // (нет на остатках) - добавим это значение из списка селектов номенклатур с признаком disabled
-                if (
-                  this.selectData.findIndex((item) => {
-                    item.id == this.inputValue;
-                  }) === -1
-                ) {
-                  // console.log(`not found ${this.inputValue} in stock`)
-                  this.item = this.findItemInStore(this.inputValue);
-                  this.loaded(true);
-                } else {
-                  // console.log(`nomenklatura ${this.inputValue} found in stock`)
-                }
-              }
-            } else {
-              this.loaded(true);
-            }
-          })
-          .finally(() => {
-            this.endLoading();
-          });
-      } else {
-        // console.log(`not need load data ${JSON.stringify(this.selectData)}`)
-        if (
-          this.selectData.findIndex((item) => {
-            item.id == this.inputValue;
-          }) === -1
-        ) {
-          this.item = this.findItemInStore(this.inputValue);
-          this.loaded(true);
-        }
-      }
-    },
-    // выдаем item из стора номенклатуры
-    findItemInStore(id) {
-      // console.log(`try to find nomenklatura ${id} in store`)
-      if (this.$store.state.table.selectData.nomenklatura) {
-        let item = this.$store.state.table.selectData.nomenklatura.find(
-          (ni) => {
-            return ni.id == id;
-          }
-        );
-        if (item) {
-          // console.log(`nomenklatura finded ${JSON.stringify(item)}`)
-          return { ...item };
-        } else {
-          // console.log(`nomenklatura ${id} not found in ${JSON.stringify(this.$store.state.table.selectData.nomenklatura)}`)
-        }
-      }
-      return {};
-    },
-    getTableData(skladId) {
-      return this.getTableStockBalance(skladId);
-    },
-    openParamTable() {
-      this.getTableData(this.skladId);
-    },
-    selectedFromParamsTable() {
-      this.showParamsForm = false;
-    },
-    showDialog() {
-      this.showParamsForm = true;
-    },
-  },
-  watch: {
-    sklad(newSkladId) {
-      // console.log(`changed sklad to ${newSkladId}`)
-      this.getStockBalance(newSkladId);
-      this.getTableData(newSkladId);
-      this.item = {};
     },
   },
 };

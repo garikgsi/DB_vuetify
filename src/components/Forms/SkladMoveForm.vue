@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- skladKeeper={{skladKeeper}} -->
-    <!-- modelValue={{modelValue}} -->
+    <!-- modelValue={{ modelValue }} -->
     <!-- buttons={{buttons}} -->
     <abp-form
       :model-value="modelValue"

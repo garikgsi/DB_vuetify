@@ -196,52 +196,63 @@ export default {
     },
 
     mutations: {
+        CLEAR_USER_UI(state) {
+            state.currentUI = null
+        },
         SET_USER_UI(state, userRoles) {
-            // console.log(`${JSON.stringify(adminRole)}`)
-            // список всех блоков для наполнения компонентами
-            let bars = ['sideBar', 'desktop', 'footer']
-            // поищем интерфейс для роли
-            let findUIs = roles.filter(r=>{
-                return userRoles.indexOf(r.name)!==-1
-            })
-            // результирующий интерфейс
-            let resUI = defaultUI
-            // если интерфейс был найден
-            if (findUIs) {
-                // определим набор компонентов для каждого блока
-                for (let bar of bars) {
-                    // для каждого найденного интерфейса добавим набор компонент
-                    for (let findUI of findUIs) {
-                        // набор компонентов блока
-                        let barComponents = findUI[bar]
-                        // помещаем в результирующий интерфейс пустой набор блока
-                        if (resUI[bar] === undefined) resUI[bar] = []
-                        // добавляем в блок результирующего интерфейса компоненты
-                        for (let componentName of barComponents) {
-                            // найдем компонент в списке компонент
-                            let findComponent = components.find(component=>{
-                                return component.name == componentName
-                            })
-                            // если нашли - добавим его
-                            if (findComponent) {
-                                // если компонента нет в списке - добавим
-                                if (resUI[bar].findIndex(UIcomponent=>{
-                                    return UIcomponent.name === findComponent.name
-                                }) === -1) {
-                                    resUI[bar].push(findComponent)
+            if (userRoles.length>0) {
+                // console.log(`${JSON.stringify(adminRole)}`)
+                // список всех блоков для наполнения компонентами
+                let bars = ['sideBar', 'desktop', 'footer']
+                // поищем интерфейс для роли
+                let findUIs = roles.filter(r=>{
+                    return userRoles.indexOf(r.name)!==-1
+                })
+                // результирующий интерфейс
+                let resUI = {...defaultUI}
+                // если интерфейс был найден
+                if (findUIs) {
+                    // определим набор компонентов для каждого блока
+                    for (let bar of bars) {
+                        // для каждого найденного интерфейса добавим набор компонент
+                        for (let findUI of findUIs) {
+                            // набор компонентов блока
+                            let barComponents = findUI[bar]
+                            // помещаем в результирующий интерфейс пустой набор блока
+                            if (resUI[bar] === undefined) resUI[bar] = []
+                            // добавляем в блок результирующего интерфейса компоненты
+                            for (let componentName of barComponents) {
+                                // найдем компонент в списке компонент
+                                let findComponent = components.find(component=>{
+                                    return component.name == componentName
+                                })
+                                // если нашли - добавим его
+                                if (findComponent) {
+                                    // если компонента нет в списке - добавим
+                                    if (resUI[bar].findIndex(UIcomponent=>{
+                                        return UIcomponent.name === findComponent.name
+                                    }) === -1) {
+                                        resUI[bar].push(findComponent)
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            } 
-            state.currentUI = resUI
+                } 
+                state.currentUI = resUI
+            } else {
+                state.currentUI = null
+            }
         }
     },
 
     actions: {
         setUserUI({commit},roles) {
+            // console.log(JSON.stringify(roles))
             commit('SET_USER_UI', roles)
+        },
+        clearUserRoles({commit}) {
+            commit('CLEAR_USER_UI')
         }
     },
 

@@ -32,8 +32,8 @@ export default new Vuex.Store({
     state: {
         // конфиг axios
         axiosCfg: {
-            baseURL: 'https://api.moydodyr.ru',
-            // baseURL: 'http://api.test',
+            // baseURL: 'https://api.moydodyr.ru',
+            baseURL: 'http://api.moydodyr',
             // timeout: 20000,
             withCredentials: false,
             headers: {
@@ -367,6 +367,10 @@ export default new Vuex.Store({
 
     },
     getters: {
+        // url сервера api
+        baseURL(state) {
+            return `${state.axiosCfg.baseURL}/api/v1/`
+        },
         isError(state) {
             if (state.error) return true; else return false
         },

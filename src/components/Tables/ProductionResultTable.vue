@@ -9,7 +9,7 @@
       :default-actions="false"
       :show-column-setup="false"
       :show-actions="true"
-      :options="{itemsPerPage:-1}"
+      :options="{ itemsPerPage: -1 }"
     >
       <!-- заголвоок для мобильной таблицы -->
       <template v-slot:title v-if="isMobile">
@@ -19,25 +19,23 @@
       </template>
       <!-- действия с изделиями -->
       <template v-slot:[`item.actions`]="{ item }">
-        <div
-          v-if="isMobile"
-        >
+        <div v-if="isMobile">
           <v-btn
             color="primary"
             text
             :disabled="item.is_producted != 1"
             @click="setProducted(false, item)"
-          >Разобрать</v-btn>
+            >Разобрать</v-btn
+          >
           <v-btn
             color="primary"
             text
             :disabled="item.is_producted == 1 && item.id != undefined"
             @click="setProducted(true, item)"
-          >Оприходовать</v-btn>
+            >Оприходовать</v-btn
+          >
         </div>
-        <div
-          v-else
-        >
+        <div v-else>
           <!-- разобрать изделие -->
           <abp-icon-button
             :disabled="item.is_producted != 1"
@@ -62,10 +60,11 @@
           :headers="componentsTableHeaders"
           :items="item.components"
           :show-actions="true"
+          :actions="true"
           height="auto"
         >
           <!-- действия в строке компонента изделия -->
-          <template v-slot:[`actions`]="{ item }">
+          <template v-slot:actions="{ item }">
             <!-- ввести серийные номера -->
             <v-btn
               v-if="isMobile"
@@ -142,7 +141,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(['isMobile']),
+    ...mapGetters(["isMobile"]),
     // данные
     data: {
       get() {
@@ -161,31 +160,33 @@ export default {
     },
     // данные таблицы изделий
     tableData() {
-      return this.data.items.map((item) => {
-        let prod = {
-          id: item.id,
-          is_producted: item.is_producted,
-          nomenklatura: item.nomenklatura,
-          serial: item.serial,
-          components: item.components.map((component) => {
-            return {
-              item_id: item.id,
-              id: component.id,
-              nomenklatura_id: component.nomenklatura_id,
-              kolvo: component.kolvo,
-              nomenklatura: component.nomenklatura,
-              lines: [
-                `${component.nomenklatura}`,
-                `Кол-во: ${component.kolvo}`
-              ]
+      return this.data.items
+        ? this.data.items.map((item) => {
+            let prod = {
+              id: item.id,
+              is_producted: item.is_producted,
+              nomenklatura: item.nomenklatura,
+              serial: item.serial,
+              components: item.components
+                ? item.components.map((component) => {
+                    return {
+                      item_id: item.id,
+                      id: component.id,
+                      nomenklatura_id: component.nomenklatura_id,
+                      kolvo: component.kolvo,
+                      nomenklatura: component.nomenklatura,
+                      lines: [
+                        `${component.nomenklatura}`,
+                        `Кол-во: ${component.kolvo}`,
+                      ],
+                    };
+                  })
+                : [],
+              lines: [`${item.nomenklatura} SN ${item.serial}`],
             };
-          }),
-          lines: [
-            `${item.nomenklatura} SN ${item.serial}`
-          ]
-        };
-        return prod;
-      });
+            return prod;
+          })
+        : [];
     },
     // модель таблицы компонентов
     componentsTableHeaders() {

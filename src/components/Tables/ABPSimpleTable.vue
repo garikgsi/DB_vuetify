@@ -78,9 +78,10 @@
             >
               <template v-for="(item, i) in items">
                 <v-list-group
-                  :key="`row${item.id}`"
+                  :key="`row_${item.id}`"
                   :no-action="true"
                   :append-icon="showRowActions ? '$expand' : null"
+                  @click="itemExpanded({ item })"
                 >
                   <template v-slot:activator>
                     <v-list-item-content class="pa-0">
@@ -140,6 +141,21 @@
                 <v-divider :key="`divider${i}`"></v-divider>
               </template>
             </v-list>
+            <!-- действие загрузить еще... -->
+            <v-row justify="center">
+              <slot name="body.append">
+                <v-col cols="12">
+                  <v-container
+                    class="max-width text-center"
+                    v-if="showLoadMore"
+                  >
+                    <v-btn text color="primary" @click="loadMore"
+                      >загрузить еще ...</v-btn
+                    >
+                  </v-container>
+                </v-col>
+              </slot>
+            </v-row>
             <!-- паджинатор -->
             <v-row justify="center" v-if="showFooter">
               <v-col cols="12">
@@ -173,16 +189,21 @@
           class="elevation-0"
           :show-expand="expanded"
           :single-expand="true"
+          :single-select="!multiSelect"
           :expanded.sync="expArray"
           :expand-icon="expandIcon"
           :footer-props="{
             'show-current-page': true,
             'show-first-last-page': true,
+            'items-per-page-options': [10, 20, 50, 100, -1],
           }"
           :hide-default-footer="!showFooter"
+          :item-key="itemValue"
           @click:row="rowClick"
+          @item-selected="itemSelected"
           @startLoading="startLoading"
           @endLoading="endLoading"
+          @item-expanded="itemExpanded($event)"
         >
           <!-- заголовок -->
           <template v-slot:top>
@@ -293,7 +314,10 @@
               <slot name="append-top"></slot>
             </slot>
           </template>
-
+          <!-- форматирование заголовков -->
+          <template v-slot:[`header.actions`]>
+            <span style="width:50px;"></span>
+          </template>
           <!-- форматирование значений в ячейках таблицы в соответствии с типом -->
           <template
             v-slot:[`item.${field.value}`]="{ item }"
@@ -373,6 +397,20 @@
                 v-bind="{ headers: headers, item: item }"
               ></slot>
             </td>
+          </template>
+          <!-- действие загрузить еще... -->
+          <template v-slot:[`body.append`]="{ headers, item }">
+            <slot name="body.append" v-bind="{ headers: headers, item: item }">
+              <td
+                :colspan="headers.length"
+                class="text-center"
+                v-if="showLoadMore"
+              >
+                <v-btn text color="primary" @click="loadMore"
+                  >загрузить еще ...</v-btn
+                >
+              </td>
+            </slot>
           </template>
 
           <!-- настройки вывода футера -->
@@ -568,6 +606,32 @@ export default {
       required: false,
       default: true,
     },
+    // показывать ссылку "Загрузить еще" в конце таблицы
+    showLoadMore: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // множественный выбор
+    multiSelect: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // наименование поля с идентификатором в объекте (при выборе в массив selected)
+    itemValue: {
+      type: String,
+      required: false,
+      default: "id",
+    },
+    // выбранные записи
+    selectedId: {
+      type: Array || String || Number,
+      required: false,
+      default() {
+        return null;
+      },
+    },
   },
   components: {
     "abp-waiting-message": ABPWaitingMessageVue,
@@ -590,6 +654,8 @@ export default {
       excludeCols: [],
       // массив отображаемых столбцов
       includeCols: [],
+      // индикация раскрытия мобильных экспандеров
+      mobileExpanded: {},
     };
   },
   computed: {
@@ -777,11 +843,56 @@ export default {
   },
   methods: {
     ...mapActions(["setLoading"]),
+    // вызов экспандера
+    itemExpanded(expander) {
+      if (this.isMobile) {
+        try {
+          if (this.mobileExpanded[expander.item.id]) {
+            this.mobileExpanded[expander.item.id] = false;
+          } else {
+            this.mobileExpanded[expander.item.id] = true;
+          }
+        } catch (error) {
+          this.mobileExpanded[expander.item.id] = true;
+        }
+        expander.value = this.mobileExpanded[expander.item.id];
+      }
+      // если экспандер открылся
+      this.$emit("expanded", expander);
+    },
     rowClick(item) {
-      // console.log(item)
+      // console.log(
+      //   `item=${JSON.stringify(item)}, payload=${JSON.stringify(payload)}`
+      // );
+      let existed = false;
+      if (this.selected && this.selected.length > 0) {
+        let itemIndex = this.selected.findIndex((i) => {
+          return i[this.itemValue] == item[this.itemValue];
+        });
+        if (itemIndex > -1) {
+          existed = true;
+          this.selected.splice(itemIndex, 1);
+        }
+      }
+      // если не найдено в массиве - добавим
+      if (!existed) {
+        this.selected = [...this.selected, ...[item]];
+      }
       this.formValues = { ...item };
-      this.selected = [item];
       this.$emit("rowClick", item);
+      this.$emit("input", this.selected);
+    },
+    itemSelected({ item, value }) {
+      // console.log(`item=${JSON.stringify(item)}, value=${value}`);
+      if (value) {
+        this.selected = [...this.selected, ...[item]];
+      } else {
+        this.selected = this.selected.filter((row) => {
+          return row[this.itemValue] != item[this.itemValue];
+        });
+      }
+      this.$emit("rowClick", item);
+      this.$emit("input", this.selected);
     },
     startLoading() {
       this.setLoading(true);
@@ -821,7 +932,11 @@ export default {
     },
     // форматирование дат
     formatDate(val) {
-      return this.$moment(val).format("DD.MM.YYYY");
+      let cellDate = this.$moment(val);
+      if (cellDate.isValid()) {
+        return this.$moment(val).format("DD.MM.YYYY");
+      }
+      return "";
     },
     // отображать столбец в таблице?
     isCol(fieldName) {
@@ -876,6 +991,10 @@ export default {
         }
       }
       this.$emit("changeColumns", this.cols);
+    },
+    // кнопка загрузить еще
+    loadMore() {
+      this.$emit("loadMore");
     },
   },
   watch: {},

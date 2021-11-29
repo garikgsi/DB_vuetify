@@ -2,6 +2,24 @@
   <div>
     <!-- <h1>Добро пожаловать домой!</h1>
         <h2>Здесь выведем элементы рабочего стола</h2> -->
+    <!-- {{ abpSelectArr }}
+    {{ abpSelect }}
+    <abp-select
+      v-for="i in [1, 2, 3, 4, 5, 6, 7]"
+      :key="`s${i}`"
+      v-model="abpSelectArr[i]"
+      table="sotrudniks"
+      :with-chips="false"
+      :title="`Сотрудник${i}`"
+      :required="true"
+      :multiple="false"
+      :readonly="false"
+      :editable="true"
+      hint="Выберите сотрудника"
+    ></abp-select> -->
+    <!-- {{ abpSelectN }}
+    <abp-select v-model="abpSelectN" table="nomenklatura"></abp-select> -->
+
     <!-- <abp-filters
             table="nomenklatura"
             v-model="filters"
@@ -26,12 +44,13 @@
             :multiSelect="false"
             v-model="ts"
         ></abp-table> -->
-    <!-- <abp-form
-            table="sklad_receives"
-            :id="1058"
-            mod-type="edit"
-            v-model="f1"
-        ></abp-form> -->
+    {{ k1 }}
+    <abp-form
+      table="kontragents"
+      :id="710"
+      mod-type="edit"
+      v-model="k1"
+    ></abp-form>
     <!-- <abp-tabs
             v-model="tabsVal"
             :tabs="tabs"
@@ -45,16 +64,32 @@
             </template>
         </abp-tabs> -->
 
+    <!-- {{ nomenklaturaId }}
+    <abp-field
+      v-model="nomenklaturaId"
+      :settings="nomenklaturaSelectSettings"
+    ></abp-field> -->
+    <!-- {{ skladId }}
+    <abp-field v-model="skladId" :settings="skladSelectSettings"></abp-field>
+    {{ o1 }} {{ ostatkiSettings }}
+    <abp-field v-model="o1" :settings="ostatkiSettings"></abp-field>
+    {{ o2 }} {{ ostatkiSettings }}
+    <abp-field v-model="o2" :settings="ostatkiSettings"></abp-field> -->
+    <!-- <stock-balance-input
+      v-model="o1"
+      v-bind="ostatkiSettings"
+      title="Остаток"
+    ></stock-balance-input> -->
+
     <!-- <abp-field
             v-model="skladId"
             :settings="settings1"
-        ></abp-field>
-        {{o1}}
-        <stock-balance-input
-            v-model="o1"
-            :skladId="skladId"
-            title="Остаток"
-        ></stock-balance-input> -->
+        ></abp-field> -->
+    <!-- <stock-balance-input
+      v-model="o1"
+      :skladId="skladId"
+      title="Остаток"
+    ></stock-balance-input> -->
 
     <!-- HomeValues={{formVal}} -->
     <!-- <sklad-move-form
@@ -63,13 +98,13 @@
             modType="edit"
         ></sklad-move-form> -->
 
-    <!-- {{f1}}
-        <abp-foreign-input
-            v-model="f1"
-            :structure="foreignStructure"
-            :required="true"
-            title="Рецепт"
-        ></abp-foreign-input> -->
+    <!-- {{ f1 }}
+    <abp-foreign-input
+      v-model="f1"
+      :structure="foreignStructure"
+      :required="true"
+      title="Рецепт"
+    ></abp-foreign-input> -->
 
     <!-- <production-replace-form
             v-model="replace"
@@ -97,20 +132,23 @@
           type="image"
         >
         </abp-table-files-extension> -->
+    <!-- {{ n1 }}
+    <abp-field v-model="n1" :settings="settingsN1"></abp-field> -->
   </div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from "vuex";
+// import ABPSelectVue from "../Form/ABPSelect.vue";
 
-// import ABPField from '../Form/ABPField'
+// import ABPField from "../Form/ABPField";
 // import ABPFilters from '../Filters/ABPFilters'
 // import ABPTable from '../Tables/ABPTable'
 // import ABPTabs from '../Misc/ABPTabs'
-// import ABPForm from '../Forms/ABPForm'
-// import StockBalanceInput from '../Form/StockBalanceInput'
+import ABPForm from "../Forms/ABPForm";
+// import StockBalanceInput from "../Form/StockBalanceInput";
 // import SkladMoveFormVue from '../Forms/SkladMoveForm.vue'
-// import ABPForeignInputVue from '../Form/ABPForeignInput.vue'
+// import ABPForeignInputVue from "../Form/ABPForeignInput.vue";
 // import ABPSimpleTableVue from '../Tables/ABPSimpleTable.vue'
 // import ABPProductionItemsTableVue from '../Tables/ABPProductionItemsTable.vue'
 // import ProductionReplaceFormVue from '../Forms/ProductionReplaceForm.vue'
@@ -120,14 +158,15 @@ import { mapGetters, mapActions } from "vuex";
 
 export default {
   components: {
-    // 'abp-field' : ABPField,
+    // "abp-select": ABPSelectVue,
+    // "abp-field": ABPField,
     // 'abp-filters' : ABPFilters,
     // 'abp-table' : ABPTable,
     // 'abp-tabs' : ABPTabs,
-    // 'abp-form' : ABPForm,
-    // 'stock-balance-input' : StockBalanceInput,
+    "abp-form": ABPForm,
+    // "stock-balance-input": StockBalanceInput,
     // 'sklad-move-form' : SkladMoveFormVue,
-    // 'abp-foreign-input' : ABPForeignInputVue,
+    // "abp-foreign-input": ABPForeignInputVue,
     // 'abp-simple-table' : ABPSimpleTableVue,
     // 'abp-production-items-table': ABPProductionItemsTableVue,
     // 'production-replace-form': ProductionReplaceFormVue,
@@ -144,7 +183,28 @@ export default {
   },
   data() {
     return {
-      f1: {},
+      abpSelect: null,
+      abpSelectObj: {},
+      abpSelectArr: [25, 20, 4, 39, null, 28],
+      abpSelectN: 3771,
+      nomenklaturaId: 240,
+      nomenklaturaSelectSettings: {
+        name: "nomenklatura_id",
+        type: "select",
+        title: "Nomenklatura",
+        table: "nomenklatura",
+        require: true,
+      },
+      n1: 1,
+      settingsN1: {
+        name: "nomenklatura_id",
+        type: "select",
+        title: "Номенклатура",
+        table: "nomenklatura",
+        require: true,
+      },
+      f1: 442,
+      k1: {},
       series: [],
       serials: [],
       replace: { production_id: 9, component_id: 8, nomenklatura_from_id: 305 },
@@ -158,15 +218,16 @@ export default {
         transitable_id: 2,
         transitable_type: "App\\Sotrudnik",
       },
-      skladId: 8,
-      o1: 142,
-      ostatkiSettings: {
-        name: "nomenklatura_id",
-        type: "stock_balance",
-        title: "Выбор номенклатуры",
-        sklad_id: 8,
+      skladSelectSettings: {
+        name: "skladid",
+        type: "select",
+        title: "Склад",
+        table: "sklads",
         require: true,
       },
+      skladId: 15,
+      o1: 2756,
+      o2: 1,
       morphSettings: {
         name: "transitable",
         title: "Через кого",
@@ -1174,6 +1235,16 @@ export default {
       if (this.showTabs) return "form";
       else return "default";
     },
+    ostatkiSettings() {
+      return {
+        name: "nomenklatura_id",
+        type: "stock_balance",
+        title: "Выбор номенклатуры из остатков",
+        sklad_id: this.skladId,
+        require: true,
+      };
+    },
+
     tabs() {
       if (this.showTabs)
         return [

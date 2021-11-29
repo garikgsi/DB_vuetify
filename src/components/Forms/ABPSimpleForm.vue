@@ -3,6 +3,7 @@
     <!-- {{model}} -->
     <!-- simple-form-values={{inputValue}} -->
     <!-- {{loadedFields}} || {{formLoaded}} -->
+    <!-- {{ lazyField }} -->
     <v-form
       v-model="formValid"
       :ref="formId"
@@ -38,15 +39,17 @@
                   :key="'field_' + index"
                   v-show="!isHidden(field)"
                 >
-                  <abp-field
-                    :class="{ hidden: isHidden(field) }"
-                    :id="`form_${formId}_field_${index}`"
-                    v-model="values[field.name]"
-                    :settings="field"
-                    @startLoading="startLoading"
-                    @endLoading="endLoading"
-                    @loaded="fieldLoaded(field.name)"
-                  ></abp-field>
+                  <v-lazy v-model="lazyField[index]">
+                    <abp-field
+                      :class="{ hidden: isHidden(field) }"
+                      :id="`form_${formId}_field_${index}`"
+                      v-model="values[field.name]"
+                      :settings="field"
+                      @startLoading="startLoading"
+                      @endLoading="endLoading"
+                      @loaded="fieldLoaded(field.name)"
+                    ></abp-field>
+                  </v-lazy>
                 </v-col>
               </template>
             </v-row>
@@ -56,9 +59,7 @@
 
         <div>
           <v-divider></v-divider>
-          <v-card-actions
-            class="my-2"
-          >
+          <v-card-actions class="my-2">
             <div v-if="buttons">
               <div
                 v-for="(button, index) in buttons"
@@ -99,7 +100,7 @@
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 import ABPIconButton from "../Form/ABPIconButton";
 
 export default {
@@ -185,6 +186,8 @@ export default {
       lastFieldInRow: null,
       formId: null,
       loadedFields: [],
+
+      lazyField: {},
     };
   },
   created() {
@@ -198,12 +201,13 @@ export default {
   mounted() {
     if (this.formLoaded) {
       if (this.setFocus) this.focus();
-    // установим тайтл
+      // установим тайтл
       this.setTitle(this.title);
     }
     // console.log('simple-form-mounted')
   },
   computed: {
+    ...mapGetters(["isMobile"]),
     // форма неактивна
     formDisabled() {
       return this.disabled;
@@ -232,7 +236,11 @@ export default {
       return this.disableForm || this.loading || false;
     },
     formLoaded() {
-      return this.model.length == this.loadedFields.length
+      try {
+        return this.model.length == this.loadedFields.length;
+      } catch (error) {
+        return true;
+      }
     },
   },
   methods: {
@@ -365,16 +373,16 @@ export default {
   },
   watch: {
     formLoaded(newValue) {
-        // после загрузки формы - фокус на 1-й инпут
-        if (newValue) {
-          this.focus();
-          // let input = document.querySelector(`#form_${this.formId}_field_0 input`);
-          // if (input) {
-          //   input.focus();
-          // } else {
-          //   console.log(`couldn't find DOM element #form_${this.formId}_field_0 input`)
-          // }
-        }
+      // после загрузки формы - фокус на 1-й инпут
+      if (newValue) {
+        if (!this.isMobile) this.focus();
+        // let input = document.querySelector(`#form_${this.formId}_field_0 input`);
+        // if (input) {
+        //   input.focus();
+        // } else {
+        //   console.log(`couldn't find DOM element #form_${this.formId}_field_0 input`)
+        // }
+      }
     },
     formValid(valid) {
       this.$emit("validated", valid);

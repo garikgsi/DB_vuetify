@@ -1,9 +1,10 @@
 <template>
   <div>
     <!-- {{itemValue}} {{itemText}} -->
-    <!-- {{items}} -->
+    <!-- {{ items }} -->
     <!-- select-input = {{val}} -->
     <!-- {{this.required}} || {{this.readonly}} -->
+    <!-- {{ lazyLoad }} -->
     <v-autocomplete
       v-model="val"
       :loading="selectLoading"
@@ -22,6 +23,7 @@
       :small-chips="withChips"
       :dense="dense"
       :disabled="disabled"
+      :search-input.sync="search"
       @change="change($event)"
     >
       <template v-slot:prepend-item>
@@ -43,12 +45,16 @@
       <template v-slot:prepend-inner>
         <slot name="prepend"></slot>
       </template>
+      <template v-slot:append-item>
+        <slot name="append-item"> </slot>
+      </template>
     </v-autocomplete>
   </div>
 </template>
 
 <script>
 import ABPIconButtonVue from "./ABPIconButton.vue";
+import _ from "lodash";
 
 export default {
   name: "select-input",
@@ -134,7 +140,9 @@ export default {
     this.$emit("loaded");
   },
   data() {
-    return {};
+    return {
+      search: null,
+    };
   },
   methods: {
     changeInput(newValue) {
@@ -143,16 +151,32 @@ export default {
     change(newValue) {
       this.$emit("change", newValue);
     },
+    // поиск с ожиданием
+    doSearch: _.debounce(function(string) {
+      let needSearch = true;
+      if (this.val) {
+        if (
+          this.items.findIndex((row) => {
+            return row.select_list_title == string;
+          }) !== -1
+        )
+          needSearch = false;
+      }
+      // console.log(`search = ${string}, needSearch=${needSearch}`);
+      if (needSearch) this.$emit("search", string);
+    }, 1200),
     // очистка
     clearInput() {
-      if (this.multiple) {
-        this.changeInput([]);
-      } else {
-        this.changeInput(1);
-      }
+      // if (this.multiple) {
+      //   this.changeInput([]);
+      // } else {
+      //   this.changeInput(null);
+      // }
+      this.$emit("clear");
     },
   },
   computed: {
+    // значение селекта
     val: {
       get() {
         if (this.multiple) {
@@ -198,6 +222,11 @@ export default {
     selectLoading() {
       return this.loading;
       // return false
+    },
+  },
+  watch: {
+    search(val) {
+      this.doSearch(val);
     },
   },
 };

@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-footer app></v-footer>
-    <v-bottom-navigation app grow v-if="isAuth">
+    <v-bottom-navigation app grow v-if="isAuth && userUI">
       <v-btn
         v-for="(link, index) in userUI.footer"
         :key="`btn_${index}`"

@@ -11,7 +11,9 @@
       :show-header="false"
       :show-actions="actions"
       :show-active-decoration="false"
+      :show-load-more="showLoadMore"
       @rowClick="rowClick($event)"
+      @loadMore="loadMore"
     >
       <template v-slot:[`item.actions`]="{ item }" v-if="actions">
         <slot name="actions" :item="item"></slot>
@@ -66,8 +68,18 @@ export default {
       required: false,
       default: false,
     },
+    // всего записей
+    total: {
+      type: Number,
+      required: false,
+      default: 0,
+    },
   },
   computed: {
+    // показывать кнопку дозагрузки контента
+    showLoadMore() {
+      return false && this.total !== this.data.length;
+    },
     data() {
       return this.items.map((item, i) => {
         return { n: i + 1, ...item };
@@ -133,6 +145,10 @@ export default {
     // клик по строке таблицы
     rowClick(item) {
       this.$emit("rowClick", item);
+    },
+    // подгрузить очередную порцию контента
+    loadMore() {
+      this.$emit("loadMore");
     },
   },
 };

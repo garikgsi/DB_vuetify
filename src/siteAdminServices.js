@@ -21,6 +21,7 @@ export default {
             }
             case 'post': {
 // console.log(`post request url=${url}, formData=${JSON.stringify(formData)}`)
+                formData.append("_method", "POST")
                 return axios.post(url, formData,store.getters.axiosCfg)
             }
             case 'put': {
@@ -64,9 +65,11 @@ export default {
                                 if (Array.isArray(fval)) {
                                     // добавляем несколько файлов
                                     for (let file of fval) {
+                            // console.log(`Array! fname=${fname}, file.name=${file.name}`)
                                         fd.append(fname, file, file.name)
                                     }
                                 } else {
+                            // console.log(`fname=${fname}, fval.name=${fval.name}`)
                                     fd.set(fname, fval, fval.name)
                                 }
 
@@ -219,7 +222,8 @@ export default {
     getModel(table) {
         return axios.get(`/api/v1/${table}?odata=model`,store.getters.axiosCfg)
     },
-    getTableData(table, options, odata='data') {
+    // подготавливаем url для API на основе опций, переданных из store.table
+    prepareApiUrl(table, options, odata) {
         let url = `/api/v1/`;
         if (options.table_type) {
             if (options.table_type == 'report') url += 'report/'
@@ -290,8 +294,183 @@ export default {
         if (options.scope) {
             url += `&scope=${options.scope}`
         }
+        return url
+    },
 
-        return axios.get(url,store.getters.axiosCfg)
+    // выдаем оценочное время загрузки данных на основании переданных опций
+    async estimateRequest(table, options, odata='data') {
+        // ответ, который отправим, если проверки не требуются
+        let dontCheckResponse = {estimateTime:null, blockLength:null,is_error:false}
+        // посчитаем кол-во записей, которые нужно вернуть в ответе
+        let resCount = null
+        if (options.limit) {
+            resCount =options.limit
+        } else {
+            // страничный вывод
+            if (options.itemsPerPage) {
+                resCount =options.itemsPerPage
+            }
+        }
+        // максимально возможное кол-во записей, которые не проверяем
+        let maxUncontrolledLimit = 10
+        // если кол-во запрашиваемых данных превышат лимит - будем анализировать ответ
+        return new Promise((resolve, reject)=>{
+            if (resCount && (resCount>maxUncontrolledLimit || resCount == -1)) {
+                let url = this.prepareApiUrl(table, options, 'count')
+                    axios.get(url,store.getters.axiosCfg).then((response)=>{
+                        try {
+                            // всего записей, которые будем возвращать
+                            let total = response.data.count
+                            // если кол-во записей >0
+                            if (total>0) {
+                                // кол-во, которое необходимо вернуть
+                                if (resCount===null || resCount == -1) resCount = total
+                                // максимальное время ожидания в секундах
+                                let waitTime = 10
+                                // время получения пробных данных
+                                let probeTime = -1
+                                // сформируем тестовый запрос (начнем с 2% данных), на основании ответа на который посчитаем время выдачи 
+                                let probeLimit = Math.ceil(resCount/50)
+                                // будем пытаться получить данные и настраивать порцию данных под канал
+                                // while (probeTime>-1 || probeLimit>=1) {
+                                    let probeOptions = {...options, ...{
+                                        limit:probeLimit, offset: 0, page:null, itemsPerPage:null
+                                    }}
+                                    // формируем пробные url
+                                    let probeUrl = this.prepareApiUrl(table, probeOptions,odata)
+                                    // если будет превышено время ожидания
+                                    const CancelToken = axios.CancelToken;
+                                    const source = CancelToken.source();
+                                    // обработка неответа в случае превышения таймаута
+                                    const timeout = setTimeout(() => {
+                                        // прерываем ожидание данных
+                                        source.cancel();
+                                    }, waitTime*1000)
+
+                                    // получаем пробные данные
+                                    axios.get(probeUrl,{...store.getters.axiosCfg, ...{cancelToken: source.token}}).then((response)=>{
+                                    // axios.get(probeUrl,{...store.getters.axiosCfg}).then((response)=>{
+                                        clearTimeout(timeout);
+
+                                        try {
+                                            // время получения пробных данных
+                                            probeTime = parseFloat(response.data.time_request)
+                                            // анализ загрузки
+                                            // примерное время ожидания данных
+                                            let estimateTime = Math.round(resCount * probeTime / probeLimit *100) / 100
+                                            // рассчитаем блок загрузки - не должен превышать 10 сек
+                                            //  probeLimit = probeTime
+                                            //  x = 15
+                                            let blockLength = Math.ceil(10*probeLimit/probeTime)
+                                            resolve({estimateTime, blockLength,total})
+                                        } catch (error) {
+                                            if (axios.isCancel(error)) {
+                                                // уменьшаем блок еще на 10%
+                                                probeLimit = Math.ceil(probeLimit/10)
+                                                console.log(`need crop block`)
+                                            } else {
+                                                reject(error)
+                                            }
+                                        }
+                                    })
+                                // }
+                            } else {
+                                resolve({...dontCheckResponse, ...{total:0}})
+                            }
+                        } catch (error) {
+                            reject(response)
+                        }
+                    }).catch(error=>{
+                        reject(error)
+                    })
+            } else {
+                resolve(dontCheckResponse)
+            }
+        })
+    },
+
+// TODO
+// СДЕЛАТЬ ФУНКЦИЮ БЛОЧНОЙ ВЫБОРКИ ДАННЫХ 
+// ПО АНАЛОГИИ С SITEADMINSERVICES-GETTABLEDATA
+// С ИНФОМАЦИОННЫМ ВЫВОДОМ О ПРОГНОЗИРОВАНИИ ВЫВОДА И ТД
+
+    // получаем набор данных на основании подготовленного url
+    async getTableData(table, options, odata='data') {
+        // всего записей
+        let total = null
+        // пакет данных
+        let limit = 10
+        // текущее смещение
+        let offset = 0
+        // всего времени затрачено
+        let totalTime = 0
+        // данные
+        let data = []
+        // есть ошибка
+        let is_error = false
+        // ошибка
+        let error = ''
+        // максимально возможное кол-во записей, которые не проверяем
+        let maxUncontrolledLimit = 10
+
+        // пробуем получить оценочные сведения
+        let estimateRequest = await(this.estimateRequest(table, options, odata))
+        // если переданы оценочные данные
+        if (estimateRequest.blockLength) {
+            limit = estimateRequest.blockLength
+        }
+        if (estimateRequest.blockLength) {
+            total = estimateRequest.total
+        }
+        // кол-во запрошенных записей
+        let tableDataLimit = options.limit ? options.limit : options.itemsPerPage ? options.itemsPerPage : total
+        // сдвиг с учетом переданного в опциях
+        // console.log(`options.page=${options.page}, options.itemsPerPage=${options.itemsPerPage}, options.offset=${options.offset}, options.limit=${options.limit}`)
+        if (options.page && options.itemsPerPage) {
+            offset = options.itemsPerPage * options.page
+            if (offset <0) offset =0
+        } else if (options.offset && options.limit>0) {
+            offset = options.offset
+        }
+        // если лимит в опциях передан меньше, чем в оценке - используем значение из опций
+        if (tableDataLimit<limit && tableDataLimit!==-1) limit = tableDataLimit
+
+        // для неограниченных списков или превышающих maxUncontrolledLimit
+        if (total !== 0 || tableDataLimit==-1 || tableDataLimit>maxUncontrolledLimit) {
+            // ответ сервера
+            let response = null
+            // загружаем данные в массиве циклом
+            while(tableDataLimit===null || tableDataLimit==-1 || tableDataLimit > data.length) {
+                // console.log(`offset=${offset}`)
+                // опции для текущего пакета данных
+                let pageOptions = {...options, ...{
+                    limit:limit, offset: offset, page:null, itemsPerPage:null
+                }}
+                // готовим запрос исходя из смещения и пакета данных
+                let pageUrl = this.prepareApiUrl(table, pageOptions, odata)
+                // получаем данные
+                response = await axios.get(pageUrl,store.getters.axiosCfg)
+                try {
+                    if (response.data.data.length>0) {
+                        // обновим значение total
+                        total = response.data.count
+                        // если в лимитах указано -1 - установим total
+                        if (tableDataLimit===null || tableDataLimit==-1) tableDataLimit = total
+                        // время обработки всего
+                        totalTime += parseFloat(response.data.time_request)
+                        // данные складываем в массив
+                        data = [...data, ...response.data.data]
+                        // следующая страница
+                        offset += limit
+                    }
+                } catch (error) {
+                    // данные не получены
+                    is_error = true
+                }
+                if (response.data.data !== undefined && response.data.data.length==0) break
+            }
+        }
+        return {data, is_error, error, time:totalTime, count:total}
     },
     // проведение документа
     setPost(payload) {

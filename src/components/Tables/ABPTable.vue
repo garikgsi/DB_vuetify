@@ -1,9 +1,12 @@
 <template>
   <div>
+    <!-- {{ tableOptions }} -->
+    <!-- {{ selected }} -->
     <abp-simple-table
       v-if="tableModel && tableOptions && dataItems"
       :title="title"
       :model="tableModel"
+      v-model="selected"
       :items="dataItems"
       :total="tableDataCount"
       :options="tableOptions"
@@ -18,11 +21,16 @@
       :expanded="withExpander"
       :show-footer="true"
       :show-header="true"
+      :selectable="selectable"
+      :multi-select="multiSelect"
+      :item-value="itemValue"
+      :selected-id="selectedId"
       @optionsChanged="changeOptions($event)"
       @refreshData="getData"
       @clearFilters="clearFilters"
       @rowClick="rowClick($event)"
       @changeColumns="changeCols($event)"
+      @expanded="rowExpanded($event)"
     >
       <!-- кнопка добавить -->
       <template v-slot:prepend-top-actions v-if="editable">
@@ -47,7 +55,6 @@
           v-model="searchFilter"
           dark
           :filter="searchFilterModel"
-          @input="changeFilters()"
           @selected="setSearchFocus($event)"
         ></abp-filter>
       </template>
@@ -59,6 +66,10 @@
           :table="tableName"
           @input="changeFilters($event)"
         ></abp-filters>
+      </template>
+      <!-- слот за фильтрами -->
+      <template v-slot:append-top-actions>
+        <slot name="append-top-actions"></slot>
       </template>
       <!-- вывод действий в строке -->
       <template v-slot:[`item.actions`]="{ item }" v-if="editable">
@@ -143,6 +154,7 @@
       <template v-slot:expander="{ item }">
         <template v-if="hasItemsTable">
           <abp-items-table
+            :key="`items_table${item.id}`"
             v-if="!!item.items && !!itemsModel"
             :items="item.items"
             :model="itemsModel.fields"
@@ -317,6 +329,14 @@ export default {
         return [];
       },
     },
+    // миксин опций загрузки данных
+    options: {
+      type: Object,
+      required: false,
+      default() {
+        return {};
+      },
+    },
     // кнопки добавить, редактировать и т.д.
     editable: {
       type: Boolean,
@@ -377,6 +397,20 @@ export default {
       type: Array,
       required: false,
     },
+    // наименование поля с идентификатором в объекте (при выборе в массив selected)
+    itemValue: {
+      type: String,
+      required: false,
+      default: "id",
+    },
+    // выбранные записи
+    selectedId: {
+      type: Array || String || Number,
+      required: false,
+      default() {
+        return null;
+      },
+    },
   },
   data() {
     return {
@@ -396,7 +430,7 @@ export default {
       // обрабатываемая строка с серийником
       currentItem: null,
       // поиск по таблице
-      searchFilter: null,
+      // searchFilter: null,
       // объект описания поиска для фильтра
       searchFilterModel: { name: "search", type: "string" },
       // фокус на поиске
@@ -424,7 +458,39 @@ export default {
       "removeTableRow",
       "setPost",
       "setTitle",
+      "addItemsData",
     ]),
+    // открылся экспандер
+    rowExpanded(event) {
+      if (this.hasItemsTable) {
+        if (event.value) {
+          // console.log(`exp event=${JSON.stringify(event)}`);
+          let needLod = false;
+          // проверим, может уже все данные загружены
+          try {
+            if (
+              this.totalItemsCount[event.item.id][this.itemsTable.method] >
+              event.item[this.itemsTable.method].length
+            ) {
+              needLod = true;
+            }
+          } catch (error) {
+            needLod = true;
+          }
+          // если не все данные загружены
+          if (needLod) this.loadMoreItems(event.item.id);
+        }
+      }
+    },
+    // добавить очередную порцию итемсов
+    loadMoreItems(id) {
+      let loadSettings = {
+        id,
+        table: this.table,
+        subTable: this.itemsTable,
+      };
+      this.addItemsData(loadSettings);
+    },
     // установлен/снят фокус с инпута поиска
     setSearchFocus(isFocused) {
       this.searchFocused = isFocused;
@@ -439,7 +505,7 @@ export default {
           if (this.tableTitle) this.setTitle(this.tableTitle);
           // на мобиле - получим данные и опции таблицы
           if (this.tableOptions !== undefined) {
-            this.getData();
+            // this.getData();
           } else {
             this.syncTableOptions({
               table: this.tableName,
@@ -454,9 +520,14 @@ export default {
       this.$emit("input", newValue);
     },
     clearFilters() {
-      this.changeFilters({});
+      let newFilters = {};
+      if (this.filters.search) {
+        newFilters.search = this.filters.search;
+      }
+      this.changeFilters(newFilters);
     },
     changeOptions(newOptions) {
+      this.$emit("optionsChanged", newOptions);
       this.syncTableOptions({
         table: this.tableName,
         options: newOptions,
@@ -465,7 +536,11 @@ export default {
       });
     },
     changeFilters(newVal) {
-      this.filters = { ...newVal, ...{ search: this.searchFilter } };
+      this.filters = { ...newVal };
+      this.tableOptions = {
+        ...this.tableOptions,
+        ...{ page: 1 },
+      };
       // this.setTableFilterValues({'table':this.tableName, 'data':this.filters})
       //     .then(()=>{
       //         this.getData()
@@ -475,12 +550,16 @@ export default {
       this.getData();
     },
     getData() {
+      // console.log(`getting data`);
       if (this.useDataArray) {
         this.$emit("getData");
       } else {
         return new Promise((resolve) => {
           this.tableLoading = true;
-          this.getTableData({ table: this.tableName, keyModel: this.keyModel })
+          this.getTableData({
+            table: this.tableName,
+            options: this.dataOptions,
+          })
             .then(() => {
               resolve(true);
             })
@@ -506,14 +585,6 @@ export default {
     rowClick(item) {
       if (this.editable && item.permissions.edit == 1) {
         this.actionEdit(item);
-      } else {
-        if (this.selectable) {
-          if (this.multiSelect) {
-            this.changeInput([...this.selected], [item]);
-          } else {
-            this.changeInput([item]);
-          }
-        }
       }
     },
     actionEdit(item) {
@@ -571,7 +642,7 @@ export default {
         table: this.tableName,
         id: item.id,
         values: { is_active: 0 },
-        message: "Документ распроведен",
+        msg: "Документ распроведен",
       });
     },
     formatVal(val, type) {
@@ -782,6 +853,44 @@ export default {
       "mobileTableCols",
       "isMobile",
     ]),
+    // миксин опций получения данных
+    dataOptions() {
+      let options = { ...this.options };
+      if (this.keyModel.length > 0) {
+        options.keyModel = [...this.keyModel];
+      }
+      let filters = {};
+      // только указанные значения
+      if (this.validItems) {
+        if (this.itemValue == "id") {
+          options.id = this.validItems;
+        } else {
+          filters[this.itemValue] = this.validItems;
+        }
+      }
+      // исключить значения из списка - будут доступны только переданные в массиве
+      if (this.exceptItems) {
+        if (this.itemValue == "id") {
+          options.not_id = this.exceptItems;
+        } else {
+          // не реализано языком api
+        }
+      }
+      options.filters = filters;
+      return options;
+    },
+    // общее кол-во подчиненных записей
+    totalItemsCount() {
+      if (this.hasItemsTable) {
+        try {
+          return this.$store.state.table.tableItemsDataCount[this.tableName];
+        } catch (error) {
+          return 0;
+        }
+      }
+      return 0;
+    },
+
     hasAddPermission() {
       if (this.fullModel) {
         return this.fullModel.extensions.permissions.add == 1;
@@ -815,11 +924,11 @@ export default {
           table: this.tableName,
           data: newValue,
         }).then(() => {
-          this.getData();
+          // this.getData();
         });
       },
     },
-    // фильтр - текстовый поиск
+    // есть фильтр - текстовый поиск
     hasSearchFilter() {
       try {
         return (
@@ -830,6 +939,24 @@ export default {
       } catch (e) {
         return false;
       }
+    },
+    // фильтр - сохраненное значение текстового поиска
+    searchFilter: {
+      get() {
+        // console.log(`-->${this.filters.search}`);
+        try {
+          return this.filters.search;
+        } catch (error) {
+          return "";
+        }
+      },
+      set(newValue) {
+        // console.log(`newSearch=${newValue}`);
+        this.changeFilters({
+          ...this.filters,
+          ...{ search: newValue },
+        });
+      },
     },
     // полная модель таблицы
     fullModel() {
@@ -996,15 +1123,31 @@ export default {
       if (this.$store.state.table.tableData[this.tableName]) {
         let d = this.$store.state.table.tableData[this.tableName];
         // только указанные значения будут доступны для выбора
-        if (this.validItems) {
+        // if (this.validItems) {
+        //   d = d.filter((item) => {
+        //     return this.ValidItems.indexOf(item.id) !== -1;
+        //   });
+        // }
+        // // исключить значения из списка - будут доступны только переданные в массиве
+        // if (this.exceptItems) {
+        //   d = d.filter((item) => {
+        //     return this.exceptItems.indexOf(item.id) === -1;
+        //   });
+        // }
+        // добавим итемсы из formData
+        if (this.hasItemsTable) {
           d = d.map((item) => {
-            return this.ValidItems.indexOf(item.id) === -1;
-          });
-        }
-        // исключить значения из списка - будут доступны только переданные в массиве
-        if (this.exceptItems) {
-          d = d.map((item) => {
-            return this.exceptItems.indexOf(item.id) !== -1;
+            try {
+              let newItem = { ...item };
+              newItem[
+                this.itemsTable.method
+              ] = this.$store.state.table.formData[this.tableName][newItem.id][
+                this.itemsTable.method
+              ];
+              return newItem;
+            } catch (error) {
+              return item;
+            }
           });
         }
         return d;
@@ -1071,7 +1214,11 @@ export default {
       let counter = 0;
       for (let filter in this.filters) {
         if (filter !== "search") {
-          if (this.filters[filter]) counter++;
+          if (Array.isArray(this.filters[filter])) {
+            if (this.filters[filter].length > 0) counter++;
+          } else {
+            if (this.filters[filter]) counter++;
+          }
         }
       }
       return counter;

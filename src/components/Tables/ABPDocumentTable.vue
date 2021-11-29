@@ -1,14 +1,19 @@
 <template>
   <div>
+    <!-- {{items.length}} -->
     <!-- {{allSelectsLoaded}} {{selectsLoaded}} {{selects}} -->
     <!-- {{tableColItog}} -->
     <!-- {{subTableValid}} -->
     <!-- {{items}} -->
     <!-- {{headers}} -->
     <!-- {{formModel}} -->
+    <!-- {{ lazyLoad }} -->
+    <!-- {{ skladId }} -->
+    <!-- {{ currentPage }} -->
+    <!-- {{disabled}} -->
     <v-form v-model="subTableValid">
       <template v-if="isMobile">
-        <v-card width="100%" :elevation="0">
+        <v-card width="100%" :elevation="0" :disabled="disabled">
           <v-toolbar elevation="0">
             <v-toolbar-title v-if="title" :class="`${color}--text`">
               {{ title }}
@@ -35,15 +40,13 @@
             </template>
           </v-toolbar>
 
-          <v-card-text
-            class="pa-0"
-          >
+          <v-card-text class="pa-0">
             <v-list v-if="items && headers">
               <template v-for="(row, rowIndex) in items">
                 <abp-document-table-row-form
-                  :key="`form_${rowIndex}`"
                   :id="`row_${tableId}_${rowIndex}`"
-                  :row-num="rowIndex + 1"
+                  :key="`form_${rowIndex}`"
+                  :row-num="(currentPage - 1) * itemsPerPage + rowIndex + 1"
                   :row="row"
                   :headers="headers"
                   :color="color"
@@ -70,8 +73,8 @@
           :id="tableId"
           :items="items"
           :headers="headers"
-          :items-per-page="-1"
-          :page="1"
+          :items-per-page="itemsPerPage"
+          :page.sync="currentPage"
           :hide-default-footer="true"
           dense
           :sklad-id="skladId"
@@ -90,6 +93,7 @@
                 icon="mdi-dots-vertical"
                 tip="Параметры"
                 :color="color"
+                :disabled="disabled"
                 @click="toggleParams"
               ></abp-icon-button>
               <template v-slot:extension v-if="showParams">
@@ -112,24 +116,33 @@
           <template v-slot:body="{ items, headers }">
             <tbody v-if="allSelectsLoaded">
               <template v-for="(row, rowIndex) in items">
+                <keep-alive
+                  :key="`row_${rowIndex}`"
+                
+                >
                 <tr
                   is="abp-document-table-row"
                   :id="`row_${tableId}_${rowIndex}`"
-                  :row-num="rowIndex + 1"
-                  :key="`row_${rowIndex}`"
+                  :row-num="(currentPage - 1) * itemsPerPage + rowIndex + 1"
                   :row="row"
                   :headers="headers"
                   :color="color"
                   :sklad-id="skladId"
                   :readonly="readonly"
                   :deleted="row.deleted"
+                  :disabled="disabled"
                   :with-series="withSeries"
                   :with-series-editor="withSeriesEditor"
                   :table="table"
-                  @remove="removeRow(rowIndex)"
-                  @restore="restoreRow(rowIndex)"
+                  @remove="
+                    removeRow((currentPage - 1) * itemsPerPage + rowIndex)
+                  "
+                  @restore="
+                    restoreRow((currentPage - 1) * itemsPerPage + rowIndex)
+                  "
                   @loaded="loaded"
                 ></tr>
+                </keep-alive>
               </template>
               <tr class="itogs" v-if="tableColItog && !isLoading">
                 <td v-for="(col, i) in headers" :key="`itogCol_${i}`">
@@ -152,7 +165,8 @@
         <v-btn
           v-if="isMobile"
           text
-          :disabled="!subTableValid || readonly"
+          :loading="!isDataLoaded"
+          :disabled="!isAddable || readonly || disabled"
           :color="color"
           @click="addRow"
         >
@@ -162,13 +176,24 @@
           v-else
           icon="mdi-plus-circle"
           tip="Новая запись"
-          :disabled="!subTableValid || readonly"
+          :loading="!isDataLoaded"
+          :disabled="!isAddable || readonly || disabled"
           :color="color"
+          large
           @click="addRow"
         ></abp-icon-button>
       </v-col>
+      <v-col v-if="!isMobile">
+        <v-pagination
+          v-model="currentPage"
+          :length="pageCount"
+          :total-visible="5"
+          :disabled="!subTableValid || disabled"
+        ></v-pagination>
+      </v-col>
       <v-col cols="auto"
-        >Всего заполнено {{ undeleteItems.length }} наименований</v-col
+        >Всего заполнено {{ undeleteItems.length }} наименований
+        {{ !isAddable ? `из ${total}` : "" }}</v-col
       >
     </v-row>
   </div>
@@ -278,6 +303,30 @@ export default {
       required: false,
       default: false,
     },
+    // кол-во строк на странице
+    itemsPerPage: {
+      type: Number,
+      required: false,
+      default: 10,
+    },
+    // страница вывода
+    page: {
+      type: Number,
+      required: false,
+      default: 1,
+    },
+    // всего записей
+    total: {
+      type: Number,
+      required: false,
+      default: undefined,
+    },
+    // отключен функционал
+    disabled: {
+      type: Boolean,
+      required: false,
+      default: false,
+    }
   },
   data() {
     return {
@@ -293,6 +342,10 @@ export default {
       selects: [],
       // загруженных селектов в форме
       selectsLoaded: 0,
+      // дозагрузка данных при скроле
+      // lazyLoad: {},
+      // текущая страница
+      currentPage: this.page,
     };
   },
   created() {
@@ -315,10 +368,38 @@ export default {
   },
   computed: {
     ...mapGetters(["isMobile"]),
+    // кол-во страниц
+    pageCount() {
+      if (this.total) {
+        return Math.ceil(this.total/this.itemsPerPage)
+      }
+      return 1
+    },
+    // данные уже загружены
+    isDataLoaded() {
+      let res = true;
+      if (this.total && this.items) {
+        res = res && this.items.length >= this.total;
+      }
+      return res;
+    },
+    // запись может быть добавлена
+    isAddable() {
+      return this.subTableValid && this.isDataLoaded;
+    },
     // модель полностью
     fullModel() {
       return this.$store.state.table.model[this.table] || null;
     },
+    // кол-во страниц
+    pagesCount() {
+      try {
+        return Math.ceil(this.items.length / this.itemsPerPage);
+      } catch {
+        return 1;
+      }
+    },
+    // данные
     items: {
       get() {
         if (this.allSelectsLoaded) return this.inputValue;
@@ -329,9 +410,12 @@ export default {
       },
     },
     undeleteItems() {
-      return this.items.filter((item) => {
-        return !item.deleted;
-      });
+      if (this.items) {
+        return this.items.filter((item) => {
+          return !item.deleted;
+        });
+      }
+      return 0
     },
     allSelectsLoaded() {
       if (this.selectsChecked && this.selectsLoaded == this.selects.length)
@@ -429,39 +513,40 @@ export default {
     },
     // инициализация селектов
     initSelects() {
-      if (this.headers) {
-        if (!this.allSelectsLoaded && !this.selectsChecked) {
-          this.headers.forEach((field) => {
-            switch (field.type) {
-              case "select":
-                {
-                  if (this.selects.indexOf(field.table) === -1) {
-                    this.selects.push(field.table);
-                    if (!this.$store.state.table.selectData[field.table]) {
-                      this.getSelectData(field.table).then(() => {
-                        this.selectsLoaded++;
-                      });
-                    } else {
-                      this.selectsLoaded++;
-                    }
-                  }
-                }
-                break;
-              case "stock_balance":
-                {
-                  if (this.selects.indexOf(`sb__${field.name}`) === -1) {
-                    this.selects.push(`sb__${field.name}`);
-                    this.getSelectStockBalance(this.skladId).then(() => {
-                      this.selectsLoaded++;
-                    });
-                  }
-                }
-                break;
-            }
-          });
-          this.selectsChecked = true;
-        }
-      }
+      // if (this.headers) {
+      //   if (!this.allSelectsLoaded && !this.selectsChecked) {
+      //     this.headers.forEach((field) => {
+      //       switch (field.type) {
+      //         case "select":
+      //           {
+      //             if (this.selects.indexOf(field.table) === -1) {
+      //               this.selects.push(field.table);
+      //               if (!this.$store.state.table.selectData[field.table]) {
+      //                 this.getSelectData(field.table).then(() => {
+      //                   this.selectsLoaded++;
+      //                 });
+      //               } else {
+      //                 this.selectsLoaded++;
+      //               }
+      //             }
+      //           }
+      //           break;
+      //         case "stock_balance":
+      //           {
+      //             if (this.selects.indexOf(`sb__${field.name}`) === -1) {
+      //               this.selects.push(`sb__${field.name}`);
+      //               this.getSelectStockBalance(this.skladId).then(() => {
+      //                 this.selectsLoaded++;
+      //               });
+      //             }
+      //           }
+      //           break;
+      //       }
+      //     });
+      //     this.selectsChecked = true;
+      //   }
+      // }
+      this.selectsChecked = true;
     },
     formatFloat(val, type) {
       let n = 0;
@@ -505,7 +590,7 @@ export default {
       if (input) {
         input.focus();
       } else {
-        // console.log(`cannot find focus input ${el}`)
+        console.log(`cannot find focus input ${el}`)
       }
     },
     addRow() {
@@ -519,6 +604,7 @@ export default {
         }
       });
       Vue.set(this.items, this.items.length, row);
+      this.currentPage = this.pagesCount;
       this.newRowLoaded = true;
     },
     loaded() {

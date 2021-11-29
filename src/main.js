@@ -8,7 +8,8 @@ import { VueMaskDirective } from 'v-mask'
 import ABPApp from './components/ABPApp.vue'
 import ABPPrintMenu from './components/Misc/ABPPrintMenu'
 import { Plugin } from 'vue2-storage'
-
+import VueLodash from 'vue-lodash'
+import lodash from 'lodash'
 const debug = true
 
 Vue.directive('mask', VueMaskDirective)
@@ -21,6 +22,7 @@ Vue.use(Plugin, {
     driver: 'local',
     ttl: 30 * 60 * 60 * 24 * 1000 // 1 месяц
 })
+Vue.use(VueLodash, { name: 'custom' , lodash: lodash })
 
 const axios = require('axios').default;
 

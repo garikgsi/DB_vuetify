@@ -26,7 +26,7 @@
             dense
             @loaded="fieldLoaded(col)"
           ></nomenklatura-input>
-          <abp-select-input
+          <abp-select
             :id="`${rowId}_col_${colIndex}`"
             :title="col.text"
             v-else-if="col.type == 'select'"
@@ -38,7 +38,7 @@
             :disabled="deleted"
             dense
             @loaded="fieldLoaded(col)"
-          ></abp-select-input>
+          ></abp-select>
           <money-input
             :id="`${rowId}_col_${colIndex}`"
             :title="col.text"
@@ -121,17 +121,17 @@
 
 <script>
 import { mapGetters } from "vuex";
-import ABPSelectInput from "../Form/ABPSelectInput";
+import ABPSelect from "../Form/ABPSelect";
 import TextInput from "../Form/TextInput";
 import MoneyInputVue from "../Form/MoneyInput.vue";
 import KolvoInputVue from "../Form/KolvoInput.vue";
-import StockBalanceInputVue from "../Form/StockBalanceInput.vue";
+import StockBalanceInputVue from "../Form/ABPStockBalanceInput.vue";
 import NomenklaturaInputVue from "../Form/NomenklaturaInput.vue";
 
 export default {
   name: "abp-document-table-row-form",
   components: {
-    "abp-select-input": ABPSelectInput,
+    "abp-select": ABPSelect,
     "nomenklatura-input": NomenklaturaInputVue,
     "text-input": TextInput,
     "money-input": MoneyInputVue,
@@ -335,5 +335,4 @@ export default {
   border-right: 5px solid;
   border-color: #1976d2;
 }
-
 </style>

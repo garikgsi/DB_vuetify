@@ -1,4 +1,3 @@
-import Services from '../../../siteAdminServices.js'
 import Vue from 'vue'
 
 export default {
@@ -39,83 +38,64 @@ export default {
 
     actions: {
         // получаем список всех возможных серийников для продажи/перемещения/производства для записи
-        getSerialList({commit, dispatch}, payload) {
-            dispatch('setLoading', true)
-            return new Promise((resolve, reject) => {
-                let url = `/api/v1/serials_list/${payload.table}/${payload.id}`
-                Services.request(url,'get')
-                .then((response)=> {
-                    if (response.data.data) {
-                        let commitData = {table: payload.table, id:payload.id, data:response.data.data}
-                        dispatch('setInformation', 'Серийные номера загружены')
-                        dispatch('setLoading', false)
-                        commit('SET_SERIAL_LIST_DATA',commitData)
-                        resolve(response.data.data)
-                    } else {
-                        dispatch('setInformation', {color:'error', text:'Ошибка загрузки серийных номеров'})
-                        dispatch('setLoading', false)
-                        reject([])
-                    }
-                })
-                .catch((e)=>{
-                    dispatch('appErrorException', e)
-                    dispatch('setLoading', false)
-                    reject(e)
-                })
+        getSerialList({commit, dispatch, getters}, {table,id}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}serials_list/${table}/${id}`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_SERIAL_LIST_DATA',{table, id, data})
+                            resolve(data)
+                        }
+                    })
+                    .catch(e=>{
+                        dispatch('pushError', `Ошибка загрузки серийных номеров`)
+                        reject(e)
+                    })
             })
-
         },
         // получаем список серийников для строки приходного документа
-        getSerials({commit, dispatch}, payload) {
-            dispatch('setLoading', true)
-            return new Promise((resolve, reject) => {
-                let url = `/api/v1/serials/${payload.table}/${payload.id}`
-                Services.request(url,'get')
-                    .then((response)=> {
-                        if (response.data.data) {
-                            let commitData = {table: payload.table, id:payload.id, data:response.data.data}
-                            dispatch('setInformation', 'Серийные номера для записи успешно получены')
-                            dispatch('setLoading', false)
-                            commit('SET_SERIALS_DATA',commitData)
-                            resolve(response.data.data)
+        getSerials({commit, dispatch, getters}, {table,id}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}serials/${table}/${id}`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
                         } else {
-                            dispatch('setInformation', {color:'error', text:'Серийные номера не получены'})
-                            dispatch('setLoading', false)
-                            reject([])
+                            commit('SET_SERIALS_DATA',{table, id, data})
+                            resolve(data)
                         }
                     })
-                    .catch((e)=>{
-                        dispatch('appErrorException', e)
-                        dispatch('setLoading', false)
+                    .catch(e=>{
+                        dispatch('pushError', `Серийные номера не получены`)
                         reject(e)
                     })
-                })
+            })
         },
         // сопоставляем список серийников записи
-        setSerials({commit, dispatch}, payload) {
-            dispatch('setLoading', true)
-            return new Promise((resolve, reject) => {
-                let url = `/api/v1/serials/${payload.table}/${payload.id}`
-                Services.request(url,'put', payload.data)
-                    .then((response)=> {
-                        if (response.data.data) {
-                            let commitData = {table: payload.table, id:payload.id, data:response.data.data}
-                            dispatch('setInformation', 'Серийные номера для записи сохранены')
-                            dispatch('setLoading', false)
-                            commit('SET_SERIALS_DATA',commitData)
-                            resolve(response.data.data)
+        setSerials({commit, dispatch, getters}, {table, id, data}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}serials/${table}/${id}`
+                dispatch('request',{url, method:'put', data})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
                         } else {
-                            dispatch('setInformation', {color:'error', text:'Серийные номера не сохранены'})
-                            dispatch('setLoading', false)
-                            reject(response)
+                            commit('SET_SERIALS_DATA',{table, id, data})
+                            resolve(data)
                         }
                     })
-                    .catch((e)=>{
-                        dispatch('appErrorException', e)
-                        dispatch('setLoading', false)
+                    .catch(e=>{
+                        dispatch('pushError', `Серийные номера не сохранены`)
                         reject(e)
                     })
-                })
+            })
         }
     }
 }

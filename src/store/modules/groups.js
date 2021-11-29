@@ -1,4 +1,3 @@
-import Services from '../../siteAdminServices.js'
 import Vue from 'vue'
 
 export default {
@@ -26,123 +25,72 @@ export default {
             }
         },
     },
-
     actions: {
-        getGroups({commit, dispatch}, table) {
-            dispatch('setLoading', true)
-            return new Promise((resolve, reject) => {
-                let url = `/api/v1/groups/${table}`
-                Services.request(url, 'get')
-                .then((response)=>{
-                    if (response.data.data) {
-                        let groups = response.data.data
-                        commit('SET_GROUPS',{table:table, data:groups})
-                        dispatch('setInformation', 'Список групп успешно загружен')
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:response.data.error[0] || 'Не удалось получить список групп'})
-                    }
-                    resolve(response)
-                })
-                .catch((e)=>{
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 403: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                            }
+        
+        // получить список групп для таблицы
+        getGroups({commit, dispatch, getters}, table) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}groups/${table}`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_GROUPS',{table, data})
                         }
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:'Неизвестный ответ сервера'})
-                    }
-                    reject(e)
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                })
+                        resolve(data)
+                    })
+                    .catch(e=>{
+                        reject(e)
+                    })
             })
         },
-        getGroupValues({commit, dispatch}, payload) {
-            dispatch('setLoading', true)
-            return new Promise((resolve, reject) => {
-                let url = `/api/v1/${payload.table}/${payload.id}?extensions=groups`
-                Services.request(url, 'get')
-                .then((response)=>{
-                    if (response.data.data) {
-                        let vals = []
-                        if (response.data.data.groups) vals = response.data.data.groups
-                        commit('SET_GROUP_VALUES', {table:payload.table, id:payload.id, data:vals})
-                        dispatch('setInformation', 'Группы для записи загружены')
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:response.data.error[0] || 'Не удалось получить группы для записи'})
-                    }
-                    resolve(response)
-                })
-                .catch((e)=>{
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 403: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                            }
+
+        // получить все возможные значения групп для записи
+        getGroupValues({commit, dispatch, getters}, {table, id}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}${table}/${id}?extensions=groups`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_GROUP_VALUES', {table, id, data:data.groups})
                         }
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:'Неизвестный ответ сервера'})
-                    }
-                    reject(e)
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                })
+                        resolve(data)
+                    })
+                    .catch(e=>{
+                        reject(e)
+                    })
             })
         },
+
+        // установить значения групп для записи
         setGroupValues({commit}, payload) {
             commit('SET_GROUP_VALUES', {table:payload.table, id:payload.id, data:payload.vals})
         },
-        saveGroups({dispatch},payload) {
-            dispatch('setLoading', true)
-            // Route::post('/groups/{table}/{id}/{tag_name}','APIController@add_group')->middleware('auth:api'); // вставить новую группу tag_name и присвоить ее id tdble-id
-            return new Promise((resolve, reject) => {
-                let url = `/api/v1/groups/${payload.table}/${payload.id}`
-                Services.request(url, 'post', {data:payload.data})
-                .then((response)=>{
-                    if (response.data.data) {
-                        dispatch('setInformation', 'Группы сохранены')
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:response.data.error[0] || 'Не удалось сохранить группы'})
-                    }
-                    // обновим данные
-                    dispatch('getGroupValues', payload)
-                    dispatch('getGroups', payload.table)
-                    resolve(response)
-                })
-                .catch((e)=>{
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 403: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                            }
+
+        // сохранить группы для записи
+        saveGroups({dispatch, getters}, {table, id, data}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}groups/${table}/${id}`
+                dispatch('request',{url, method:'post', data:{data}})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            // обновим данные
+                            dispatch('getGroupValues', {table, id})
+                            dispatch('getGroups', table)
+                            resolve(data)
                         }
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:'Неизвестный ответ сервера'})
-                    }
-                    reject(e)
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                })
+                    })
+                    .catch(e=>{
+                        reject(e)
+                    })
             })
         }
 

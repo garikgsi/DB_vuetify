@@ -1,18 +1,23 @@
 <template>
   <div>
-    <!-- userInfo={{userInfo}} -->
-    <abp-tabs v-model="activeTab" :tabs="tabs">
+    <abp-tabs
+      v-model="activeTab"
+      :tabs="tabs"
+      v-if="hasUserInfo"
+      :disabled="tabsDisabled"
+    >
       <template v-slot:main>
         <abp-form
           :table="tableName"
           v-model="val"
+          :disabled="tabsDisabled"
           :modelMixin="modelMixin"
           :modType="modType"
           :keyModel="keyModel"
           :loading="formLoading"
-          :disableDefaultSubmit="false"
+          :disableDefaultSubmit="true"
           waitMessage="Подождите пока мы обновляем данные"
-          @submitSuccess="submitSuccess($event)"
+          @submit="submitSuccess"
           @startLoading="startLoading"
           @endLoading="endLoading"
           @loaded="loaded"
@@ -22,15 +27,19 @@
         <permissions-roles :user-id="userId"></permissions-roles>
       </template>
     </abp-tabs>
+    <abp-waiting-message v-else :loading="true">
+      Идет начальная инициализация. Это не должно занять много времени...
+    </abp-waiting-message>
   </div>
 </template>
 
 <script>
-import { mapActions } from "vuex";
+import { mapActions, mapGetters } from "vuex";
 
 import ABPForm from "./ABPForm.vue";
 import PermissionsRoles from "../Form/PermissionsRoles.vue";
 import ABPTabsVue from "../Misc/ABPTabs.vue";
+import ABPWaitingMessageVue from "../Info/ABPWaitingMessage.vue";
 
 export default {
   name: "abp-user-profile-form",
@@ -38,6 +47,7 @@ export default {
     "abp-form": ABPForm,
     "permissions-roles": PermissionsRoles,
     "abp-tabs": ABPTabsVue,
+    "abp-waiting-message": ABPWaitingMessageVue,
   },
   props: {
     userId: {
@@ -51,20 +61,25 @@ export default {
         { name: "name", title: "Ваше имя" },
         { name: "comment", hidden: true, show_in_form: false },
         { name: "phone", showAction: false, show_in_form: true, type: "phone" },
-        { name: "userable", size: 3 },
+        { name: "userable", size: 4 },
       ],
       tableName: "user_info",
       activeTab: 0,
       val: {},
       formLoading: false,
       formLoaded: false,
+      loading: false,
     };
   },
   created() {
     if (!this.hasUserInfo) {
+      this.loading = true;
       this.getUserInfo(this.userId).then(() => {
         if (this.$store.state.user.adm_user_info[this.userId]) {
-          this.val = this.$store.state.user.adm_user_info[this.userId];
+          this.val = {
+            ...this.userInfo,
+          };
+          this.loading = false;
         }
       });
     } else {
@@ -73,8 +88,16 @@ export default {
   },
   methods: {
     ...mapActions(["getUserInfo", "setUserInfo"]),
-    submitSuccess(serverData) {
-      this.setUserInfo(serverData);
+    submitSuccess() {
+      let upData = {
+        ...this.val,
+        userable_id: this.val.userable.userable_id,
+        userable_type: this.val.userable.userable_type,
+      };
+      // console.log(`updating... ${JSON.stringify(upData)}`);
+      this.setUserInfo(upData).then(() => {
+        this.val = { ...this.userInfo };
+      });
     },
     startLoading() {
       this.formLoading = true;
@@ -87,12 +110,13 @@ export default {
     },
   },
   computed: {
-    isLoading() {
-      return !this.formLoaded && this.formLoading;
+    ...mapGetters(["isLoading"]),
+    tabsDisabled() {
+      return this.isLoading || this.loading || this.formLoading;
     },
-    loading() {
-      return this.formLoading;
-    },
+    // isLoading() {
+    //   return !this.formLoaded && this.formLoading;
+    // },
     keyModel() {
       return [{ user_id: this.user }];
     },
@@ -100,7 +124,21 @@ export default {
       return this.userId;
     },
     userInfo() {
-      return this.$store.state.user.adm_user_info[this.userId];
+      try {
+        let uinfo = this.$store.state.user.adm_user_info[this.userId];
+        return {
+          ...uinfo,
+          ...{
+            userable: {
+              userable_id: uinfo.userable_id,
+              userable_type: uinfo.userable_type,
+              userable_title: uinfo.userable_title,
+            },
+          },
+        };
+      } catch (e) {
+        return null;
+      }
     },
     hasUserInfo() {
       return !!this.userInfo;
@@ -154,7 +192,7 @@ export default {
   },
   watch: {
     user(newUser) {
-      // console.log(`changed user to ${newUser}`)
+      // console.log(`changed user to ${newUser}`);
       this.getUserInfo(newUser).then(() => {
         if (this.$store.state.user.adm_user_info[this.userId]) {
           this.val = this.$store.state.user.adm_user_info[this.userId];

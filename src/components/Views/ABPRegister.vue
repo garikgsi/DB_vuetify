@@ -12,16 +12,11 @@
           :singleFieldRow="true"
         >
           <template v-slot:[`buttons-right`]>
-            <v-btn
-              :href="forgotPasswordLink"
-              target="_blank"
-              text
-              color="primary"
-            >
+            <v-btn to="/forgot_password" text color="primary">
               Забыл пароль
             </v-btn>
-            <v-btn :href="RegisterLink" target="_blank" color="primary">
-              Регистрация
+            <v-btn to="/login" color="primary">
+              Авторизация
             </v-btn>
           </template>
         </abp-simple-form>
@@ -43,43 +38,39 @@ export default {
     return {
       model: [
         {
+          name: "name",
+          title: "Ваше имя",
+          type: "string",
+          require: true,
+        },
+        {
           name: "email",
           title: "Логин",
           type: "email",
           require: true,
-          icon: "mdi-account",
-          showAction: false,
         },
         {
           name: "password",
           title: "Пароль",
           type: "password",
+          withRetype: true,
           require: true,
-          icon: "mdi-lock",
-        },
-        {
-          name: "remember",
-          title: "Запомнить меня",
-          hint: "запомнить мои данные на 1 месяц",
-          type: "boolean",
-          default: false,
         },
       ],
       values: {
         email: "",
         password: "",
-        remember: false,
       },
-      title: "Авторизация",
+      title: "Регистрация",
       buttons: [{ type: "submit", title: "OK", color: "success", dark: true }],
       loading: false,
     };
   },
   created() {
-    this.setTitle("Для работы с программой требуется авторизация");
+    this.setTitle("Регистрация в программе");
   },
   computed: {
-    ...mapGetters(["isAuth", "baseURL"]),
+    ...mapGetters(["isAuth"]),
     showInfo() {
       if (this.info) return true;
       else return false;
@@ -91,25 +82,20 @@ export default {
         return {};
       }
     },
-    // ссылка на восстановление пароля
-    forgotPasswordLink() {
-      return `${this.baseURL}/password/reset`;
-    },
-    // ссылка на регистрацию
-    RegisterLink() {
-      return `${this.baseURL}/register`;
-    },
   },
   methods: {
-    ...mapActions(["setUser", "login", "setTitle"]),
+    ...mapActions(["setTitle", "register"]),
     runAuth() {
-      this.login(this.values)
-        .then(() => {
-          if (this.isAuth) this.$router.push({ name: "home" });
-          else console.log("not auth");
+      this.loading = true;
+      this.register(this.values)
+        .then((r) => {
+          console.log(`res=${JSON.stringify(r)}`);
         })
         .catch(() => {
-          console.log(`auth error!`);
+          console.log(`not registered`);
+        })
+        .finally(() => {
+          this.loading = false;
         });
     },
   },

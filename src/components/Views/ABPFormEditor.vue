@@ -2,28 +2,26 @@
 <template>
   <div>
     <!-- {{val}} -->
-      <!-- если копирование и не выбраны опции копирования -->
-      <div
-        v-if="showCopyOptionsForm"
-      >
-        <abp-copy-form
-          :table="table"
-          :id="id"
-          title="Выберите параметры копирования"
-          @submit="copyOptionsFormSubmit"
-        ></abp-copy-form>
-      </div>
-      <component
-        v-else
-        :is="component"
+    <!-- если копирование и не выбраны опции копирования -->
+    <div v-if="showCopyOptionsForm">
+      <abp-copy-form
         :table="table"
         :id="id"
-        :copy-options="copyOptions"
-        :modType="modType"
-        :keyModel="keyModel"
-        v-bind="params"
-        v-model="val"
-      ></component>
+        title="Выберите параметры копирования"
+        @submit="copyOptionsFormSubmit"
+      ></abp-copy-form>
+    </div>
+    <component
+      v-else
+      :is="component"
+      :table="table"
+      :id="id"
+      :copy-options="copyOptions"
+      :modType="modType"
+      :keyModel="keyModel"
+      v-bind="params"
+      v-model="val"
+    ></component>
   </div>
 </template>
 
@@ -36,8 +34,9 @@ export default {
     "abp-form": () => import("../Forms/ABPForm.vue"),
     "sklad-move-form": () => import("../Forms/SkladMoveForm.vue"),
     "production-form": () => import("../Forms/ProductionForm.vue"),
-    'abp-simple-form': () => import("../Forms/ABPSimpleForm.vue"),
-    'abp-copy-form': ()=> import("../Forms/ABPCopyForm.vue")
+    "abp-simple-form": () => import("../Forms/ABPSimpleForm.vue"),
+    "abp-copy-form": () => import("../Forms/ABPCopyForm.vue"),
+    "kontragent-form": () => import("../Forms/KontragentForm.vue"),
   },
   props: {
     table: {
@@ -78,8 +77,7 @@ export default {
       // опции копирования
       copyOptions: {},
       // опции копирования установлены
-      copyOptionsIsSet: false
-
+      copyOptionsIsSet: false,
     };
   },
   created() {
@@ -96,6 +94,9 @@ export default {
         case "productions": {
           return "production-form";
         }
+        case "kontragents": {
+          return "kontragent-form";
+        }
         default: {
           return "abp-form";
         }
@@ -106,9 +107,9 @@ export default {
     },
     formExtensions() {
       if (this.fullModel) {
-        return this.fullModel.extensions
+        return this.fullModel.extensions;
       }
-      return null
+      return null;
     },
     formTitle() {
       if (this.fullModel) {
@@ -121,45 +122,66 @@ export default {
     },
     // отображать форму выбора опций копирования
     showCopyOptionsForm() {
-      return this.modType=='copy' && !this.copyOptionsIsSet && this.copyOptionsFormModel.length>0
+      return (
+        this.modType == "copy" &&
+        !this.copyOptionsIsSet &&
+        this.copyOptionsFormModel.length > 0
+      );
     },
     // модель формы выбора опций копирования
     copyOptionsFormModel() {
-      let res = []
+      let res = [];
       if (this.formExtensions) {
-        if (this.formExtensions.has_groups) res.push(
-          {name:'ext_groups', type:'boolean',title:'Группы', size: 2}
-        )
-        if (this.formExtensions.has_images) res.push(
-          {name:'ext_images', type:'boolean',title:'Изображения', size: 2}
-        )
-        if (this.formExtensions.has_files) res.push(
-          {name:'ext_documents', type:'boolean',title:'Файлы', size: 2}
-        )
-        if (this.formExtensions.has_file_list) res.push(
-          {name:'ext_file_list', type:'boolean',title:'Каталоги', size: 2}
-        )
+        if (this.formExtensions.has_groups)
+          res.push({
+            name: "ext_groups",
+            type: "boolean",
+            title: "Группы",
+            size: 2,
+          });
+        if (this.formExtensions.has_images)
+          res.push({
+            name: "ext_images",
+            type: "boolean",
+            title: "Изображения",
+            size: 2,
+          });
+        if (this.formExtensions.has_files)
+          res.push({
+            name: "ext_documents",
+            type: "boolean",
+            title: "Файлы",
+            size: 2,
+          });
+        if (this.formExtensions.has_file_list)
+          res.push({
+            name: "ext_file_list",
+            type: "boolean",
+            title: "Каталоги",
+            size: 2,
+          });
         if (this.formExtensions.sub_tables) {
           for (let subTable in this.formExtensions.sub_tables) {
-            let subTableDescr = this.formExtensions.sub_tables[subTable]
-            res.push(
-              {name:`sub_table_${subTable}`, type:'boolean',title:`${subTableDescr.title}`, size: 2}
-            )
+            let subTableDescr = this.formExtensions.sub_tables[subTable];
+            res.push({
+              name: `sub_table_${subTable}`,
+              type: "boolean",
+              title: `${subTableDescr.title}`,
+              size: 2,
+            });
           }
         }
       }
-      return res
+      return res;
     },
-
   },
   methods: {
     ...mapActions(["setTitle", "getTableModel"]),
     // подтверждение в форме выбора опций
     copyOptionsFormSubmit() {
-      this.copyOptionsIsSet = true
-      // 
-    }
-
+      this.copyOptionsIsSet = true;
+      //
+    },
   },
 };
 </script>

@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- {{ vals }} -->
     <simple-filters
       :inputValue="vals"
       :filters="filters"

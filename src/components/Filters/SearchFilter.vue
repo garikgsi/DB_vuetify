@@ -53,16 +53,16 @@ export default {
   },
   data() {
     return {
-      searchText: this.inputValue ? this.inputValue : "",
+      currentValue: this.inputValue ? this.inputValue : "",
       focused: false,
     };
   },
   methods: {
     searchTextChange() {
-      this.$emit("input", this.searchText);
+      this.$emit("input", this.currentValue);
     },
     clearText() {
-      this.searchText = "";
+      this.currentValue = "";
       this.searchTextChange();
     },
     focus() {
@@ -78,6 +78,14 @@ export default {
     ...mapGetters(["isMobile"]),
     currentClass() {
       return !this.focused && this.isMobile ? "tiny-width" : "full-width";
+    },
+    searchText: {
+      get() {
+        return this.inputValue ? this.inputValue : "";
+      },
+      set(newValue) {
+        this.currentValue = newValue;
+      },
     },
     hasText() {
       return this.searchText.length > 0;

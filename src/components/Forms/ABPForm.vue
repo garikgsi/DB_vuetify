@@ -11,40 +11,42 @@
     <!-- {{formModel}} -->
     <!-- {{permissions}} -->
     <!-- {{hasPermissions}} -->
-    
-    <div
-      v-if="tableReady"
-    >
+    <!-- {{ lazyData }} -->
+    <!-- =>{{ itemsTotal }} -->
 
-        <abp-tabs v-model="activeTab" :tabs="tabs" :disabled="formDisabled">
-          <!-- форма -->
-          <!-- {{showWaitingMessage}} -->
-          <template v-slot:[formSlot]>
-            <abp-simple-form
-              v-if="tableReady"
-              v-model="formValues"
-              :title="title"
-              :model="visibleFields"
-              :loading="formLoading"
-              :buttons="null"
-              :closable="closable"
-              :singleFieldRow="singleFieldRow"
-              :setFocus="setFocus"
-              :readonly="readonly"
-              :disabled="formDisabled"
-              @startLoading="startLoading"
-              @endLoading="endLoading"
-              @buttonClick="onButtonClick"
-              @clickClose="clickClose"
-              @validated="formValidated($event)"
-            >
-              <template v-slot:after-fields>
+    <div v-if="tableReady">
+      <abp-tabs v-model="activeTab" :tabs="tabs" :disabled="formDisabled">
+        <!-- форма -->
+        <!-- {{showWaitingMessage}} -->
+        <template v-slot:[formSlot]>
+          <abp-simple-form
+            v-if="tableReady"
+            v-model="formValues"
+            :title="title"
+            :model="visibleFields"
+            :loading="formLoading"
+            :buttons="null"
+            :closable="closable"
+            :singleFieldRow="singleFieldRow"
+            :setFocus="setFocus"
+            :readonly="readonly"
+            :disabled="formDisabled"
+            @startLoading="startLoading"
+            @endLoading="endLoading"
+            @buttonClick="onButtonClick"
+            @clickClose="clickClose"
+            @validated="formValidated($event)"
+          >
+            <template v-slot:after-fields>
+              <v-lazy v-model="lazyData.groups">
                 <abp-groups
                   v-if="showGroups && !miniForm"
                   :table="table"
                   :id="id"
                 ></abp-groups>
-                <!-- табличная часть документа -->
+              </v-lazy>
+              <!-- табличная часть документа -->
+              <v-lazy v-model="lazyData.itemsTable">
                 <div v-if="showSubTable">
                   <v-divider></v-divider>
                   <abp-document-table
@@ -55,114 +57,114 @@
                     color="primary"
                     v-model="subTableItems"
                     :readonly="readonly"
+                    :disabled="!formValid"
                     :with-series="withSeries"
                     :with-series-editor="withSeriesEditor"
+                    :total="itemsTotal"
                     @validated="tableValidated($event)"
                   ></abp-document-table>
                 </div>
-                <slot name="after-fields"></slot>
-              </template>
-              <!-- левая секция кнопок -->
-              <template v-slot:buttons-left>
-                <slot name="buttons-left">
+              </v-lazy>
+              <slot name="after-fields"></slot>
+            </template>
+            <!-- левая секция кнопок -->
+            <template v-slot:buttons-left>
+              <slot name="buttons-left">
+                <v-btn
+                  :disabled="!fullValid"
+                  color="primary"
+                  @click.stop="onSubmit(true)"
+                >
+                  OK
+                </v-btn>
+                <template v-if="!miniForm">
                   <v-btn
                     :disabled="!fullValid"
                     color="primary"
-                    @click.stop="onSubmit(true)"
+                    @click.stop="onSubmit(false)"
                   >
-                    OK
+                    Сохранить
                   </v-btn>
-                  <template v-if="!miniForm">
+                  <template v-if="isDocument">
                     <v-btn
+                      v-if="!isActive"
                       :disabled="!fullValid"
-                      color="primary"
-                      @click.stop="onSubmit(false)"
+                      color="success"
+                      @click.stop="makeActiveAndSubmit(true)"
                     >
-                      Сохранить
+                      Провести
                     </v-btn>
-                    <template v-if="isDocument">
-                      <v-btn
-                        v-if="!isActive"
-                        :disabled="!fullValid"
-                        color="success"
-                        @click.stop="makeActiveAndSubmit(true)"
-                      >
-                        Провести
-                      </v-btn>
-                      <v-btn
-                        v-if="isActive"
-                        :disabled="!fullValid"
-                        color="secondary"
-                        @click.stop="makeUnactiveAndSubmit(true)"
-                      >
-                        Распровести
-                      </v-btn>
-                    </template>
+                    <v-btn
+                      v-if="isActive"
+                      :disabled="!fullValid"
+                      color="secondary"
+                      @click.stop="makeUnactiveAndSubmit(true)"
+                    >
+                      Распровести
+                    </v-btn>
                   </template>
-                </slot>
-              </template>
-              <!-- правая секция кнопок -->
-              <template v-slot:buttons-right>
-                <v-btn v-if="canSwitchMini" @click="toggleMiniForm" text>
-                  {{ miniFormTitle }}
-                </v-btn>
-              </template>
-            </abp-simple-form>
-            <abp-waiting-message v-else>
-              {{ waitMessage }}
-            </abp-waiting-message>
-          </template>
-          <!-- Все файлы в 1 вкладке -->
-          <template v-slot:all-files v-if="showFilesTab">
-            <v-expansion-panels flat multiple v-model="filesPanel">
-              <template v-for="(panel, i) in filesPanelItems">
-                <v-expansion-panel :key="`panel_${i}`">
-                  <v-expansion-panel-header>
-                    {{ panel.title }} 
-                  </v-expansion-panel-header>
-                  <v-expansion-panel-content>
+                </template>
+              </slot>
+            </template>
+            <!-- правая секция кнопок -->
+            <template v-slot:buttons-right>
+              <v-btn v-if="canSwitchMini" @click="toggleMiniForm" text>
+                {{ miniFormTitle }}
+              </v-btn>
+            </template>
+          </abp-simple-form>
+          <abp-waiting-message v-else>
+            {{ waitMessage }}
+          </abp-waiting-message>
+        </template>
+        <!-- Все файлы в 1 вкладке -->
+        <template v-slot:all-files v-if="showFilesTab">
+          <v-expansion-panels flat multiple v-model="filesPanel">
+            <template v-for="(panel, i) in filesPanelItems">
+              <v-expansion-panel :key="`panel_${i}`">
+                <v-expansion-panel-header>
+                  {{ panel.title }}
+                </v-expansion-panel-header>
+                <v-expansion-panel-content>
+                  <v-lazy v-model="lazyData[panel.name]">
                     <abp-table-files-extension
                       :table="table"
                       :id="id"
                       :type="panel.name"
                     >
                     </abp-table-files-extension>
-                  </v-expansion-panel-content>
-                  <v-divider></v-divider>
-                </v-expansion-panel>
-              </template>
-            </v-expansion-panels>
-          </template>
-          <!-- подчиненные таблицы -->
-          <template v-for="tab in subTableTabs" v-slot:[tab.name]>
-            <abp-form-sub-table
-              :key="`st_${tab.keys.foreign_table}_${id}`"
-              :table="tab.keys.foreign_table"
-              :keyModel="tab.keyModel"
-            ></abp-form-sub-table>
-          </template>
-          <!-- кнопка закрыть -->
-          <template v-slot:after>
-            <slot name="after">
-              <v-row>
-                <v-col
-                  v-if="!miniForm && tableReady && withCloseButton"
-                  class="d-flex align-end flex-column"
-                >
-                  <v-btn 
-                    text 
-                    class="ma-4"
-                    @click.stop="closeAction"
-                  >
-                    Закрыть
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </slot>
-          </template>
-        </abp-tabs>
-      </div>
-
+                  </v-lazy>
+                </v-expansion-panel-content>
+                <v-divider></v-divider>
+              </v-expansion-panel>
+            </template>
+          </v-expansion-panels>
+        </template>
+        <!-- подчиненные таблицы -->
+        <template v-for="tab in subTableTabs" v-slot:[tab.name]>
+          <abp-form-sub-table
+            :key="`st_${tab.keys.foreign_table}_${id}`"
+            :table="tab.keys.foreign_table"
+            :keyModel="tab.keyModel"
+          ></abp-form-sub-table>
+        </template>
+        <!-- кнопка закрыть -->
+        <template v-slot:after>
+          <slot name="after">
+            <v-row>
+              <v-col
+                v-if="!miniForm && tableReady && withCloseButton"
+                class="d-flex align-end flex-column"
+              >
+                <v-btn text class="ma-4" @click.stop="closeAction">
+                  Закрыть
+                </v-btn>
+              </v-col>
+            </v-row>
+          </slot>
+        </template>
+      </abp-tabs>
+    </div>
   </div>
 </template>
 
@@ -306,8 +308,8 @@ export default {
     // опции копирования
     copyOptions: {
       type: Object,
-      required: false
-    }
+      required: false,
+    },
   },
   data() {
     return {
@@ -327,6 +329,14 @@ export default {
       selectsChecked: false,
       // данные загружены
       dataLoaded: false,
+      // подгружаемые в процессе скролинга компоненты
+      lazyData: {
+        groups: false,
+        files: false,
+        list: false,
+        image: false,
+        itemsTable: false,
+      },
     };
   },
   created() {
@@ -340,16 +350,33 @@ export default {
   },
   computed: {
     ...mapGetters(["prevRoute", "serviceFieldNames"]),
+    // кол-во записей в тааблице items
+    itemsTotal() {
+      try {
+        return this.$store.state.table.tableItemsDataCount[this.table][this.id][
+          this.subTable.method
+        ];
+      } catch (error) {
+        return undefined;
+      }
+    },
     // форма неактивна
     formDisabled() {
       return this.disabled;
     },
     formValues: {
       get() {
+        //
+        try {
+          if (this.id)
+            return this.$store.state.table.formData[this.table][this.id];
+        } catch (error) {
+          // modelValue returned
+        }
         return this.modelValue;
       },
       set(newVal) {
-        // console.log(`setting abpform data ${JSON.stringify(newVal)}`)
+        console.log(`setting abpform data ${JSON.stringify(newVal)}`);
         this.$emit("input", newVal);
       },
     },
@@ -385,11 +412,11 @@ export default {
     // таблица готова к отображению
     tableReady() {
       return (
-        this.formModel &&
-        this.dataLoaded &&
-        this.fields &&
+        !!this.formModel &&
+        !!this.dataLoaded &&
+        !!this.fields &&
         this.allSelectsLoaded &&
-        this.tableType
+        !!this.tableType
       );
     },
     // тип таблицы
@@ -416,30 +443,44 @@ export default {
     },
     // табличная часть документа, если документ конечно
     subTable() {
-      if (this.hasSubTables) {
-        if (this.formExtensions.sub_tables) {
-          for (let table in this.formExtensions.sub_tables) {
-            let sub = this.formExtensions.sub_tables[table];
-            if (this.$store.state.table.model[sub.table]) {
-              sub.model = this.$store.state.table.model[sub.table];
-              let subTableFields = this.$store.state.table.model[sub.table]
-                .fields;
-              let stockBalanceField = subTableFields.find((field) => {
-                return field.type == "stock_balance" && !!field.sklad_id;
-              });
-              if (stockBalanceField) {
-                sub.skladId = stockBalanceField.sklad_id;
+      try {
+        if (this.hasSubTables) {
+          if (this.formExtensions.sub_tables) {
+            for (let table in this.formExtensions.sub_tables) {
+              let sub = this.formExtensions.sub_tables[table];
+              if (this.$store.state.table.model[sub.table]) {
+                sub.model = this.$store.state.table.model[sub.table];
+                let subTableFields = this.$store.state.table.model[sub.table]
+                  .fields;
+                let stockBalanceField = subTableFields.find((field) => {
+                  return field.type == "stock_balance" && !!field.sklad_id;
+                });
+                if (stockBalanceField) {
+                  sub.skladId = stockBalanceField.sklad_id;
+                }
               }
+              if (sub.method == "items") return sub;
             }
-            if (sub.method == "items") return sub;
           }
         }
+      } catch (error) {
+        // do nothing
       }
       return null;
     },
+    // поля подчиненной таблицы
+    subTableFields() {
+      try {
+        return this.subTable.model.fields;
+      } catch (error) {
+        // return below
+      }
+      return null;
+    },
+    // items-ы
     subTableItems() {
       if (this.formValues.items === undefined) {
-        Vue.use(this.formValues, "items", []);
+        Vue.use(this.formValues, "items", this.storeSubTableItems);
       }
       return this.formValues.items;
     },
@@ -451,15 +492,21 @@ export default {
     },
     // серийные номера в табличной части - списание серийников
     withSeries() {
-      if (this.subTableModel.extensions)
+      try {
         return this.subTableModel.extensions.has_sub_series;
-      else return false;
+      } catch (error) {
+        // return below
+      }
+      return false;
     },
     // серийные номера в табличной части - добавление бд серийников
     withSeriesEditor() {
-      if (this.subTableModel.extensions)
+      try {
         return this.subTableModel.extensions.has_series;
-      else return false;
+      } catch (error) {
+        // return below
+      }
+      return false;
     },
     showImages() {
       if (this.formExtensions)
@@ -468,7 +515,12 @@ export default {
     },
     showGroups() {
       if (this.formExtensions)
-        return this.formExtensions.has_groups && this.id && this.table && this.modType=='edit';
+        return (
+          this.formExtensions.has_groups &&
+          this.id &&
+          this.table &&
+          this.modType == "edit"
+        );
       else return false;
     },
     showDocuments() {
@@ -628,17 +680,20 @@ export default {
     // видимые поля
     visibleFields() {
       // в мини-форме оставим только обязательные поля
-      if (this.miniForm) {
-        return this.fields.map((field) => {
-          if (field.require) {
-            return field;
-          } else {
-            return { ...field, ...{ hidden: true } };
-          }
-        });
-      } else {
-        return this.fields;
+      if (this.fields) {
+        if (this.miniForm) {
+          return this.fields.map((field) => {
+            if (field.require) {
+              return field;
+            } else {
+              return { ...field, ...{ hidden: true } };
+            }
+          });
+        } else {
+          return this.fields;
+        }
       }
+      return [];
     },
     // поля формы
     fields() {
@@ -696,17 +751,11 @@ export default {
     },
     // поле с выбором ндс в подчиненной таблице
     withNds() {
-      if (
-        this.subTable &&
-        this.subTable.table &&
-        this.$store.state.table.model[this.subTable.table].fields
-      ) {
+      if (this.subTable && this.subTable.table && this.subTableFields) {
         return (
-          this.$store.state.table.model[this.subTable.table].fields.findIndex(
-            (field) => {
-              return field.type == "select" && field.table == "nds";
-            }
-          ) !== -1
+          this.subTableFields.findIndex((field) => {
+            return field.type == "select" && field.table == "nds";
+          }) !== -1
         );
       }
       return false;
@@ -717,7 +766,6 @@ export default {
       "getTableModel",
       "setLoading",
       "getFormData",
-      "getSelectData",
       "setInformation",
       "saveAndPost",
     ]),
@@ -745,16 +793,22 @@ export default {
             //   this.storeDataLoded = true;
             //   resolve();
             // } else {
-              // грузим значения в стейт
-              this.getFormData({ tableName: this.table, id: this.id }).then(
-                () => {
-                  this.storeDataLoded = true;
-                  this.formValues = this.$store.state.table.formData[
-                    this.table
-                  ][this.id];
-                  resolve();
-                }
-              );
+            // грузим значения в стейт
+            this.getFormData({ tableName: this.table, id: this.id }).then(
+              () => {
+                this.storeDataLoded = true;
+                // console.log(
+                //   `store formData = ${JSON.stringify(
+                //     this.$store.state.table.formData[this.table]
+                //   )}`
+                // );
+                // this.formValues = this.$store.state.table.formData[this.table][
+                //   this.id
+                // ];
+                // console.log(`formValues=${JSON.stringify(this.formValues)}`);
+                resolve();
+              }
+            );
             // }
           } else {
             reject("не передан id");
@@ -788,9 +842,9 @@ export default {
               if (field.default) {
                 fieldValue = field.default;
               } else {
-                let selectFields = ['select', 'foreign_select']
-                if (selectFields.indexOf(field.type)!==-1) {
-                  fieldValue = 1
+                let selectFields = ["select", "foreign_select"];
+                if (selectFields.indexOf(field.type) !== -1) {
+                  fieldValue = 1;
                 }
               }
               Vue.set(this.formValues, field.name, fieldValue);
@@ -803,10 +857,14 @@ export default {
           switch (field.type) {
             case "morph":
               {
-                // console.log(`morph field ${field.name} executed`)
-                //                                     if (this.formValues[field.name]) {
-                // console.log(`morph values exists ${JSON.stringify(this.formValues[field.name])}`)
-                //                                     } else {
+                // console.log(`morph field ${field.name} executed`);
+                // if (this.formValues[field.name]) {
+                //   console.log(
+                //     `morph values exists ${JSON.stringify(
+                //       this.formValues[field.name]
+                //     )}`
+                //   );
+                // }
                 fieldValue = {};
                 fieldValue[field.name + "_id"] =
                   this.formValues &&
@@ -818,11 +876,13 @@ export default {
                   this.formValues[field.name + "_type"] !== undefined
                     ? this.formValues[field.name + "_type"]
                     : null;
+                // console.log(`${field.name}=${JSON.stringify(fieldValue)}`);
                 if (this.formValues[field.name]) {
                   this.modelValue[field.name] = { ...fieldValue };
                 } else {
                   Vue.set(this.modelValue, field.name, fieldValue);
                 }
+                // console.log(`res=${JSON.stringify(this.modelValue)}`);
                 // console.log(`morph value ${JSON.stringify(fieldValue)} set ${JSON.stringify(this.formValues[field.name])}`)
                 // }
               }
@@ -839,20 +899,20 @@ export default {
 
         this.dataLoaded = true;
         // наполним селектами форму
-        this.fields.forEach((field) => {
-          if (field.type == "select") {
-            if (this.selects.indexOf(field.table) === -1) {
-              this.selects.push(field.table);
-              if (this.$store.state.table.selectData[field.table]) {
-                this.selectsLoaded++;
-              } else {
-                this.getSelectData(field.table).then(() => {
-                  this.selectsLoaded++;
-                });
-              }
-            }
-          }
-        });
+        // this.fields.forEach((field) => {
+        //   if (field.type == "select") {
+        //     if (this.selects.indexOf(field.table) === -1) {
+        //       this.selects.push(field.table);
+        //       if (this.$store.state.table.selectData[field.table]) {
+        //         this.selectsLoaded++;
+        //       } else {
+        //         this.getSelectData(field.table).then(() => {
+        //           this.selectsLoaded++;
+        //         });
+        //       }
+        //     }
+        //   }
+        // });
         this.selectsChecked = true;
       }
     },
@@ -899,7 +959,7 @@ export default {
             modType: this.modType,
             model: this.formModel,
             values: saveVals,
-            copyOptions: this.copyOptions
+            copyOptions: this.copyOptions,
           };
           if (withPost) {
             for (let i in withPost) {
@@ -921,7 +981,8 @@ export default {
                 // закрытие в зависимости от типа отображения (модальное окно/маршрут)
                 this.closeAction();
               } else {
-                this.formValues = newInfo;
+                this.formValues = { ...newInfo };
+                // console.log(`new_info=${JSON.stringify(newInfo)}`);
                 this.loadValues();
                 // переходим к предыдущему роуту
                 if (!this.inDialog) {
@@ -940,8 +1001,14 @@ export default {
             })
             .finally(() => {
               this.endLoading();
-              this.$emit("submitEnd");
             });
+        } else {
+          // console.log(`submitted`);
+          this.$emit("submit");
+          if (close) {
+            // закрытие в зависимости от типа отображения (модальное окно/маршрут)
+            this.closeAction();
+          }
         }
       } else {
         this.setInformation({
@@ -996,5 +1063,4 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
-</style>
+<style lang="scss" scoped></style>

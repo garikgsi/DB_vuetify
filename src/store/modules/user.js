@@ -1,4 +1,3 @@
-import Services from '../../siteAdminServices.js'
 import Vue from 'vue'
 import axios from 'axios'
 
@@ -77,59 +76,29 @@ export default {
     },
 
     actions: {
-        login({dispatch}, user) {
-            return new Promise((resolve, reject) => {
-                dispatch('setLoading', true)
-                return Services.request('/api/v1/login','post',user)
-                    .then((r)=>{
-                        if (r.status==200 && r.data.data.token) {
-                            // роли пользователя
-                            let userRoles = r.data.data.roles
-                            // формируем данные пользовательской информации
-                            let userData = {'token':r.data.data.token, 'expire':r.data.data.expires_at, 'roles':userRoles}
-                            if (r.data.data.user) userData = {...userData, ...r.data.data.user}
-                            dispatch('setUser',userData)
-                            dispatch('setInformation', 'Добро пожаловать')
-                            dispatch('getUserInfo')
+        login({commit, dispatch, getters}, user) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}login`
+                dispatch('request',{url, method:'post', data:user})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
                         } else {
-                            let err = 'Некорректная авторизация'
-                            try {
-                                err = r.data.error[0]
-                            }
-                            catch(e) {
-                                console.log(`Некорректная авторизация`)
-                            }
-                            dispatch('setInformation', {color:'error',timeout:-1, text: err })
+                            let userData = {'token':data.token, 'expire':data.expires_at, 'roles':data.roles}
+                            if (data.user) userData = {...userData, ...data.user}
+                            commit('SET_USER', userData)
+                            let rolesArray = userData.roles.map(role=>{
+                                return role.name
+                            })
+                            dispatch('setUserUI',rolesArray)
+                            dispatch('pushInfo', 'Добро пожаловать')
+                            dispatch('getUserInfo')
+                            resolve(true)
                         }
-                        resolve(r)
                     })
-                    .catch((e)=> {
-                        if (e.response) {
-                            let code = e.response.status
-                            let errData = e.response.data
-                            // console.log(`code=${code}, errData=${JSON.stringify(errData.error[0])}`)
-                            let err
-                            try {
-                                err = errData.error[0]
-                            }
-                            catch(e) {
-                                console.log(`Ошибка авторизации`)
-                            }
-                            
-                            switch (code) {
-                                case 401: {
-                                    if (err === undefined) err = 'Ошибка авторизации'
-                                } break;
-                                default: {
-                                    if (err === undefined) err = 'Неизвестная ошибка авторизации'
-                                }
-                            }
-                            dispatch('setInformation', {color:'error',timeout:-1, text:err})
-                        }
+                    .catch(e=>{
                         reject(e)
-                    })
-                    .finally(()=>{
-                        dispatch('setLoading', false)
                     })
             })
         },
@@ -139,44 +108,24 @@ export default {
             dispatch('clearUserRoles')
         },
         getUserInfo({commit, dispatch, getters}, userId=null) {
-            return new Promise((resolve, reject) => {
-                dispatch('setLoading', true)
-                return Services.request(`/api/v1/user_info?filter=user_id eq ${userId?userId:getters.userId}`,'get')
-                    .then((r)=>{
-                        if (r.status==200 && r.data) {
-                            let userInfo = r.data.data[0]
-                            if (userInfo) {
-                                if (userInfo.user.id == getters.userId) {
-                                    commit('SET_USER_INFO',userInfo)
-                                }
-                                commit('SET_ADM_USER_INFO',userInfo)
-                                dispatch('setInformation', 'Обновлена информация пользователя')
-                            }
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}user_info?filter=user_id eq ${userId?userId:getters.userId}`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
                         } else {
-                            dispatch('setInformation', {color:'error',timeout:-1, text:r.data.error[0] || 'Не удалось получить информацию пользователя'})
-                        }
-                        resolve(r)
-                    })
-                    .catch((e)=>{
-                        if (e.response) {
-                            let code = e.response.status
-                            let errData = e.response.data
-                            switch (code) {
-                                case 401: {
-                                    dispatch('setInformation', {color:'error', timeout:-1, text:'Вы не авторизованы'})
-                                } break;
-                                case 403: {
-                                    dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                                } break;
-                                default: {
-                                    dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                                }
+                            let userInfo = data[0]
+                            if (userInfo.user.id == getters.userId) {
+                                commit('SET_USER_INFO',userInfo)
                             }
+                            commit('SET_ADM_USER_INFO',userInfo)
                         }
-                        reject(e)
+                        resolve(data)
                     })
-                    .finally(()=>{
-                        dispatch('setLoading', false)
+                    .catch(e=>{
+                        reject(e)
                     })
             })
         },
@@ -198,89 +147,93 @@ export default {
                     })
             })
         },
-        setUserInfo({commit, getters}, info) {
-            if (info.user.id !== undefined) {
-                let userId = info.user.id
-                if (userId == getters.userId) {
-                    commit('SET_USER_INFO',info)
-                }
-            }
-            commit('SET_ADM_USER_INFO',info)
-        },
-        getUsers({commit, dispatch}) {
-            dispatch('setLoading', true)
-            return Services.request(`/api/v1/users`,'get')
-                .then((r)=>{
-                    if (r.status==200 && r.data) {
-                        let users = r.data.data
-                        commit('SET_USERS',users)
-                        dispatch('setInformation', 'Обновлен список пользователей')
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:r.data.error[0] || 'Не удалось получить список пользователей'})
-                    }
-                })
-                .catch((e)=>{
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 401: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:'Вы не авторизованы'})
-                            } break;
-                            case 403: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                            }
-                        }
-                    }
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                })
-        },
-        getNotifications({commit, dispatch, getters}) {
-            return new Promise((resolve, reject) => {
-                if (getters.userId) {
-                    dispatch('setLoading', true)
-                    return Services.request(`/api/v1/notifications`,'get')
-                        .then((r)=>{
-                            if (r.status==200 && r.data) {
-                                let data = r.data.data
-                                commit('SET_NOTIFICATIONS',data)
-                            } else {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:r.data.error[0] || 'Не удалось загрузить последние уведомления'})
-                            }
+        async setUserInfo({commit, getters, dispatch}, info) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}user_info${info.id ? `/${info.id}`:''}`
+                let method = info.id ? 'put' :'post'
+                dispatch('getTableModel', 'user_info')
+                    .then((model)=>{
+                        dispatch('request',{url, method, data:info, model})
+                            .then(({is_error, error, data})=>{
+                                if (is_error) {
+                                    dispatch('pushError', error)
+                                    reject(error)
+                                } else {
+                                    if (data.user.id !== undefined) {
+                                        let userId = data.user.id
+                                        if (userId == getters.userId) {
+                                            commit('SET_USER_INFO',data)
+                                        }
+                                    }
+                                    commit('SET_ADM_USER_INFO',data)
+                                    dispatch('pushInfo', 'Информация пользователя сохранена')
+                                    resolve(data)
+                                }
+                            })
+                            .catch(e=>{
+                                dispatch('pushError',`Не удается найти информацию о пользователе`)
+                                reject(e)
+                            })
                         })
-                        .catch((e)=>{
-                            dispatch('appErrorException', e)
-                            reject(e)
-                        })
-                        .finally(()=>{
-                            dispatch('setLoading', false)
-                            resolve
-                        })
-                }
-                reject
-            })
-        },
-        markNote({commit, dispatch},id) {
-            // отправляем на сервер, а потом синхронизируем со стораджем
-            return new Promise((resolve, reject) => {
-                dispatch('setLoading', true)
-                return Services.request(`/api/v1/notifications/${id}`,'patch',{is_readed:1})
-                    .then(()=>{
-                        commit('MARK_NOTE_READED', id)
-                    })
-                    .catch((e)=>{
-                        dispatch('appErrorException', e)
+                    .catch(e=>{
+                        dispatch('pushError',`Не удается найти описание пользовательской таблицы`)
                         reject(e)
                     })
-                    .finally(()=>{
-                        dispatch('setLoading', false)
-                        resolve
+            })
+        },
+        getUsers({commit, dispatch, getters}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}users`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_USERS',data)
+                        }
+                        resolve(data)
                     })
+                    .catch(e=>{
+                        reject(e)
+                    })
+            })
+        },
+        getNotifications({commit, dispatch, getters}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}notifications`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_NOTIFICATIONS',data)
+                        }
+                        resolve(data)
+                    })
+                    .catch(e=>{
+                        reject(e)
+                    })
+            })
+        },
+        markNote({commit, dispatch, getters},id) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}notifications/${id}`
+                dispatch('request',{url, method:'patch', data:{is_readed:1}})
+                .then((response)=>{
+                    let {is_error, error, data} = response
+                    if (is_error) {
+                        dispatch('pushError', error)
+                        reject(error)
+                    } else {
+                        commit('MARK_NOTE_READED', id)
+                    }
+                    resolve(data)
+                })
+                .catch(e=>{
+                    reject(e)
+                })
             })
         },
     },
@@ -328,8 +281,10 @@ export default {
             return null
         },
         isKeeper(state) {
-            if (state.user_info) {
+            try {
                 return state.user_info.sklad_keeper.length>0
+            } catch (error) {
+                // do nothing
             }
             return null
         },

@@ -1,5 +1,3 @@
-import Services from '../../siteAdminServices.js'
-
 
 export default {
 
@@ -38,73 +36,42 @@ export default {
     },
 
     actions: {
-        getRoles({commit, dispatch}) {
-            dispatch('setLoading', true)
-            return Services.request(`/api/v1/roles`,'get')
-                .then((r)=>{
-                    if (r.status==200 && r.data) {
-                        let roles = r.data.data
-                        commit('SET_ROLES',roles)
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:r.data.error[0] || 'Не удалось получить список ролей'})
-                    }
-                })
-                .catch((e)=>{
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 401: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:'Вы не авторизованы'})
-                            } break;
-                            case 403: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                            }
+        getRoles({commit, dispatch, getters}) {
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}roles`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_ROLES', data)
                         }
-                    }
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                })
+                        resolve(data)
+                    })
+                    .catch(e=>{
+                        reject(e)
+                    })
+            })
         },
-        getUserRoles({commit, dispatch},userId=null) {
-            dispatch('setLoading', true)
-            let userRoles = null
-            let url = `/api/v1/user_roles`
-            if (userId) url += `/${userId}`
-            return Services.request(url,'get')
-                .then((r)=>{
-                    if (r.status==200 && r.data) {
-                        userRoles = r.data.data
-                        dispatch('setInformation', 'Обновлены роли пользователя')
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:r.data.error[0] || 'Не удалось обновить роли пользователя'})
-                    }
-                })
-                .catch((e)=>{
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 401: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:'Вы не авторизованы'})
-                            } break;
-                            case 403: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                            }
+        getUserRoles({commit, dispatch, getters},userId=null) {
+            return new Promise((resolve, reject)=>{
+                commit('SET_USER_ROLES',null)
+                let url = `${getters.baseURL}user_roles${userId?`/${userId}`:''}`
+                dispatch('request',{url, method:'get'})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_USER_ROLES',data)
                         }
-                    }
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                    commit('SET_USER_ROLES',userRoles)
-                })
+                        resolve(data)
+                    })
+                    .catch(e=>{
+                        reject(e)
+                    })
+            })
         },
         setUserRoles({commit},roles) {
             commit('SET_USER_ROLES',roles)
@@ -113,41 +80,23 @@ export default {
             commit('SET_USER_ROLES',null)
         },
         saveUserRoles({commit, dispatch, getters}, userId=null) {
-            dispatch('setLoading', true)
-            let url = `/api/v1/user_roles`
-            if (userId) url += `/${userId}`
-console.log(`send request ${url} with data ${JSON.stringify(getters.userRoles)}`)
-            Services.request(url,'post',{data:getters.userRoles})
-                .then((r)=>{
-                    if (r.status==200 && r.data) {
-                        let userRoles = r.data.data
-                        commit('SET_USER_ROLES',userRoles)
-                        dispatch('setInformation', 'Роли пользователя сохранены')
-                    } else {
-                        dispatch('setInformation', {color:'error',timeout:-1, text:r.data.error[0] || 'Не удалось сохранить пользователя'})
-                    }
-                })
-                .catch((e)=>{
-                    if (e.response) {
-                        let code = e.response.status
-                        let errData = e.response.data
-                        switch (code) {
-                            case 401: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:'Вы не авторизованы'})
-                            } break;
-                            case 403: {
-                                dispatch('setInformation', {color:'error', timeout:-1, text:errData.error[0] || 'Ошибка прав доступа'})
-                            } break;
-                            default: {
-                                dispatch('setInformation', {color:'error',timeout:-1, text:errData.error[0] || 'Неизвестная ошибка сервера'})
-                            }
+            return new Promise((resolve, reject)=>{
+                let url = `${getters.baseURL}user_roles${userId?`/${userId}`:''}`
+                dispatch('request',{url, method:'post', data:{data:getters.userRoles}})
+                    .then(({is_error, error, data})=>{
+                        if (is_error) {
+                            dispatch('pushError', error)
+                            reject(error)
+                        } else {
+                            commit('SET_USER_ROLES',data)
+                            dispatch('pushInfo',`Роли пользователя сохранены`)
+                            resolve(data)
                         }
-                    }
-                })
-                .finally(()=>{
-                    dispatch('setLoading', false)
-                })
-
+                    })
+                    .catch(e=>{
+                        reject(e)
+                    })
+            })
         },
         saveUserPermissions({ dispatch}, userId=null) {
             dispatch('saveUserRoles',userId)

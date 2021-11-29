@@ -33,6 +33,7 @@
     "vue-cookies": "^1.7.4",
     "vue-drag-resize": "^1.5.4",
     "vue-loader": "^15.9.8",
+    "vue-lodash": "^2.1.2",
     "vue-moment": "^4.1.0",
     "vue-moment-lib": "^1.2.2",
     "vue-router": "^3.5.2",

@@ -25,31 +25,16 @@
               :required="true"
             ></kolvo-input>
           </v-col>
-          <v-spacer
-            class="d-none d-md"
-          ></v-spacer>
-          <v-col
-            v-if="isMobile"
-            cols="12"
-            class="text-center"
-          >
-            <v-icon 
-              :color="color" 
-              large
-            >
+          <v-spacer class="d-none d-md"></v-spacer>
+          <v-col v-if="isMobile" cols="12" class="text-center">
+            <v-icon :color="color" large>
               mdi-swap-vertical
             </v-icon>
           </v-col>
-          <v-icon 
-            v-else
-            :color="color" 
-            large
-          >
+          <v-icon v-else :color="color" large>
             mdi-swap-horizontal
           </v-icon>
-          <v-spacer
-            class="d-none d-md"
-          ></v-spacer>
+          <v-spacer class="d-none d-md"></v-spacer>
           <v-col cols="12" md="2">
             <kolvo-input
               v-model="val.kolvo_to"
@@ -121,41 +106,47 @@ export default {
     },
   },
   created() {
-    if (this.$store.state.table.selectData.nomenklatura) {
-      this.$emit("loaded");
-      this.stateLoaded = true;
-    } else {
-      this.getSelectData("nomenklatura").then(() => {
-        this.$emit("loaded");
-        this.stateLoaded = true;
-      });
-    }
+    // if (this.$store.state.table.selectData.nomenklatura) {
+    //   this.$emit("loaded");
+    //   this.stateLoaded = true;
+    // } else {
+    //   this.getSelectData("nomenklatura").then(() => {
+    //     this.$emit("loaded");
+    //     this.stateLoaded = true;
+    //   });
+    // }
   },
   data() {
     return {
       // состояние таблицы номенклатур загружено
-      stateLoaded: false,
+      stateLoaded: true,
     };
   },
   computed: {
-    ...mapGetters(['isMobile']),
+    ...mapGetters(["isMobile"]),
     val() {
       return this.inputValue;
     },
-    nomenklaturaData() {
-      return this.$store.state.table.selectData.nomenklatura || [];
-    },
+    // nomenklaturaData() {
+    //   return this.$store.state.table.selectData.nomenklatura || [];
+    // },
   },
   methods: {
-    ...mapActions(["getSelectData"]),
-    submit() {
+    ...mapActions(["searchInSelect"]),
+    async submit() {
+      let nomenklatura_from = await this.searchInSelect({
+        table: "nomenklatura",
+        id: this.val.nomenklatura_from_id,
+      });
+      let nomenklatura_to = await this.searchInSelect({
+        table: "nomenklatura",
+        id: this.val.nomenklatura_to_id,
+      });
       this.$emit("input", {
         ...this.val,
         ...{
-          nomenklatura_from: this.findNomenklatura(
-            this.val.nomenklatura_from_id
-          ),
-          nomenklatura_to: this.findNomenklatura(this.val.nomenklatura_to_id),
+          nomenklatura_from: nomenklatura_from.select_list_title,
+          nomenklatura_to: nomenklatura_to.select_list_title,
         },
       });
       this.$emit("submit");
@@ -163,12 +154,12 @@ export default {
     close() {
       this.$emit("close");
     },
-    findNomenklatura(id) {
-      let findRes = this.nomenklaturaData.find((item) => {
-        return item.id === id;
-      });
-      return findRes ? findRes.select_list_title : null;
-    },
+    // findNomenklatura(id) {
+    //   let findRes = this.nomenklaturaData.find((item) => {
+    //     return item.id === id;
+    //   });
+    //   return findRes ? findRes.select_list_title : null;
+    // },
   },
 };
 </script>
