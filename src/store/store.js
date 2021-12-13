@@ -57,6 +57,8 @@ export default new Vuex.Store({
         contentTableDataTotal: 0,
         contentTableOptions: Constants.defaultTableOptions,
         contentLoadedFor: 0,
+        // токен для сервисов AI daData
+        daDataToken: '6621098f09a193ec1474822a3f48dc889608fc9f',
 
         // исходные модели таблиц
         models: {},
@@ -437,5 +439,8 @@ export default new Vuex.Store({
         tableItemsPerPageText() {
             return Constants.tableItemsPerPageText
         },
+        daDataToken(state) {
+            return state.daDataToken
+        }
     }
 });

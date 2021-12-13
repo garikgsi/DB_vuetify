@@ -1,7 +1,7 @@
 // редактор формы
 <template>
   <div>
-    <!-- {{val}} -->
+    <!-- {{ val }} -->
     <!-- если копирование и не выбраны опции копирования -->
     <div v-if="showCopyOptionsForm">
       <abp-copy-form
@@ -37,6 +37,7 @@ export default {
     "abp-simple-form": () => import("../Forms/ABPSimpleForm.vue"),
     "abp-copy-form": () => import("../Forms/ABPCopyForm.vue"),
     "kontragent-form": () => import("../Forms/KontragentForm.vue"),
+    "rs-form": () => import("../Forms/RSForm.vue"),
   },
   props: {
     table: {
@@ -96,6 +97,9 @@ export default {
         }
         case "kontragents": {
           return "kontragent-form";
+        }
+        case "rs": {
+          return "rs-form";
         }
         default: {
           return "abp-form";

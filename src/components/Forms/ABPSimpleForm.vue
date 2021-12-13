@@ -4,6 +4,7 @@
     <!-- simple-form-values={{inputValue}} -->
     <!-- {{loadedFields}} || {{formLoaded}} -->
     <!-- {{ lazyField }} -->
+    <!-- inputValue={{ inputValue }} -->
     <v-form
       v-model="formValid"
       :ref="formId"
@@ -15,6 +16,8 @@
         <v-card-title v-if="title || closable">
           <v-toolbar flat>
             <v-toolbar-title>{{ title }}</v-toolbar-title>
+            <v-spacer></v-spacer>
+            <slot name="after-title"></slot>
             <v-spacer></v-spacer>
             <abp-icon-button
               v-if="closable"
@@ -36,11 +39,12 @@
                   :md="fieldWidth(field, 'md')"
                   :lg="fieldWidth(field, 'lg')"
                   :xl="fieldWidth(field, 'xl')"
-                  :key="'field_' + index"
+                  :key="'field_' + field.name + '_' + index"
                   v-show="!isHidden(field)"
                 >
                   <v-lazy v-model="lazyField[index]">
                     <abp-field
+                      v-if="field"
                       :class="{ hidden: isHidden(field) }"
                       :id="`form_${formId}_field_${index}`"
                       v-model="values[field.name]"
@@ -48,6 +52,7 @@
                       @startLoading="startLoading"
                       @endLoading="endLoading"
                       @loaded="fieldLoaded(field.name)"
+                      @input="fieldInput(field.name, $event)"
                     ></abp-field>
                   </v-lazy>
                 </v-col>
@@ -66,7 +71,7 @@
                 :key="`forn_btn_${index}`"
               >
                 <v-btn
-                  v-if="button.type == 'submit'"
+                  v-if="button.type !== undefined && button.type == 'submit'"
                   type="submit"
                   :disabled="!formValid"
                   :dark="button.dark || false"
@@ -78,7 +83,7 @@
                 </v-btn>
                 <v-btn
                   v-else
-                  :type="button.type || 'button'"
+                  :type="button.type !== undefined ? button.type : 'button'"
                   :dark="button.dark || false"
                   :color="button.color || 'primary'"
                   @click="emitClick(button.action || null)"
@@ -254,6 +259,18 @@ export default {
     fieldLoaded(fieldName) {
       this.loadedFields.push(fieldName);
     },
+    fieldInput(field, newVal) {
+      this.values[field] = newVal;
+      // console.log(
+      //   `field=${JSON.stringify(
+      //     field
+      //   )} changed, fieldInput newVal=${JSON.stringify(
+      //     newVal
+      //   )}, values[field]=${JSON.stringify(this.values[field])}`
+      // );
+      // this.values = { ...this.values, ...{ [field]: newVal } };
+      this.$emit("input", this.values);
+    },
     emitClick(emitAction) {
       if (emitAction) {
         this.$emit("buttonClick", emitAction);
@@ -274,7 +291,11 @@ export default {
       this.$emit("startLoading");
     },
     isHidden(field) {
-      return (field.hidden && field.hidden == true) || field.type == "key";
+      try {
+        return (field.hidden && field.hidden == true) || field.type == "key";
+      } catch (error) {
+        return true;
+      }
     },
     fieldWidth(field, size) {
       // коэффициент относительно xl
@@ -334,34 +355,38 @@ export default {
           }
         } else {
           // некоторые поля должны иметь свои размеры
-          if (field.type) {
-            switch (field.type) {
-              case "morph":
-                {
-                  cols = 12;
-                }
-                break;
-              case "radio":
-                {
-                  cols = 12;
-                }
-                break;
-              case "textarea":
-                {
-                  k *= 2;
-                }
-                break;
-              case "pricequantityamount":
-                {
-                  cols = 12;
-                }
-                break;
-              case "text":
-                {
-                  cols = 12;
-                }
-                break;
+          try {
+            if (field.type) {
+              switch (field.type) {
+                case "morph":
+                  {
+                    cols = 12;
+                  }
+                  break;
+                case "radio":
+                  {
+                    cols = 12;
+                  }
+                  break;
+                case "textarea":
+                  {
+                    k *= 2;
+                  }
+                  break;
+                case "pricequantityamount":
+                  {
+                    cols = 12;
+                  }
+                  break;
+                case "text":
+                  {
+                    cols = 12;
+                  }
+                  break;
+              }
             }
+          } catch (error) {
+            // defualy value return below
           }
         }
       }

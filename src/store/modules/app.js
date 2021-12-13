@@ -1,5 +1,6 @@
 import axios from 'axios'
 import router from '../../router'
+import Vue from 'vue'
 
 export default {
 
@@ -21,7 +22,9 @@ export default {
         // массив брейкпоинтов, которые рассматриваем как мобильное отображение
         mobileBreakPoints: ['xs'],
         // время ожидания запроса до прерывания в секундах
-        waitResponseTime: 120
+        waitResponseTime: 120,
+        // состояния открытых табов
+        tabState: {}
     },
 
     mutations: {
@@ -61,6 +64,13 @@ export default {
         },
         SET_PREV_ROUTE(state, route) {
             state.prevRoute = route
+        },
+        SET_TAB_STATE(state, {name,val}) {
+            if (state.tabState[name]) {
+                state.tabState[name] = val
+            } else {
+                Vue.set(state.tabState, name, val)
+            }
         }
     },
 
@@ -95,7 +105,10 @@ export default {
         pushInfo({dispatch},text) {
             dispatch('setInformation', {color:'success', text:text})
         },
-
+        // установить значение открытого таба
+        setTabState({commit},{name,val}) {
+            commit('SET_TAB_STATE',{name,val})
+        },
         // отправить запрос на сервер
         async request({dispatch, getters},{url, method, data, dataWithoutModel, model}) {
             // console.log(`request url=${url},method=${method}, data=${JSON.stringify(data)}, model=${JSON.stringify(model)}`)

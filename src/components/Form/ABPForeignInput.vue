@@ -15,6 +15,7 @@
       :placeholder="stepPlaceholder"
       :rules="rules"
       :readonly="readonly"
+      :cache-items="false"
       @input="change($event)"
       @focusout="clearSearch"
       @focus="checkData"
@@ -379,9 +380,25 @@ export default {
         this.step > 0 &&
         this.val[prevStep] != undefined
       ) {
-        let keyModel = {};
-        keyModel[this.stepKeyField] = this.val[prevStep].id;
-        return { keyModel: [keyModel] };
+        let keyModel = [];
+        // console.log(`type=${typeof this.stepKeyField}`);
+        if (typeof this.stepKeyField === "object") {
+          for (let morphKey in this.stepKeyField) {
+            let morphModel = this.stepKeyField[morphKey];
+            if (morphModel[`${morphKey}_type`])
+              keyModel.push({
+                [`${morphKey}_type`]: morphModel[`${morphKey}_type`],
+              });
+            keyModel.push({ [`${morphKey}_id`]: this.val[prevStep].id });
+          }
+        } else {
+          // console.log(
+          //   `stepKeyField=${this.stepKeyField}, val=${this.val[prevStep].id}`
+          // );
+          keyModel.push({ [this.stepKeyField]: this.val[prevStep].id });
+        }
+        // console.log(`keyModel=${JSON.stringify(keyModel)}`);
+        return { keyModel: keyModel };
       }
       return null;
     },
@@ -448,6 +465,11 @@ export default {
           ...this.stepOptions,
           ...getOptions,
         };
+        // console.log(
+        //   `table=${table}, get forein select data options=${JSON.stringify(
+        //     options
+        //   )}`
+        // );
         // сохраним состояние опций получения данных для шага
         this.stepDataOptions[this.step] = { ...options };
         // получаем данные

@@ -2,6 +2,8 @@
   <div>
     <!-- {{ tableOptions }} -->
     <!-- {{ selected }} -->
+    <!-- table keyModel = {{ keyModel }} -->
+    <!-- {{ filters }} -->
     <abp-simple-table
       v-if="tableModel && tableOptions && dataItems"
       :title="title"

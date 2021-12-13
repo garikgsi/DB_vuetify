@@ -2,8 +2,10 @@
   <div>
     <!-- dataCompleteLoaded={{ dataCompleteLoaded }} , loadedCount =
     {{ loadedCount }} , totalCount = {{ totalCount }} -->
-    <!-- , val={{ val }},
-    inputValue={{ inputValue }}, selectedObjects={{ selectedObjects }} -->
+    <!-- , val={{ val }}, inputValue={{ inputValue }}, selectedObjects={{
+      selectedObjects
+    }} -->
+    <!-- inputValue={{ inputValue }} -->
 
     <v-select
       v-model="val"
@@ -58,6 +60,7 @@
           :loading="isLoading"
           :complete-loaded="dataCompleteLoaded"
           :disable-params="disableParams || !table"
+          :disable-add="!table"
           @addClick="addClick"
           @paramsClick="paramsClick"
           @blur="searchBlur"
@@ -396,9 +399,7 @@ export default {
         }
       }
       // загружаем данные в стейт
-      if (!this.sourceData || this.sourceData.length == 0) {
-        this.getData();
-      }
+      this.getData();
     }
     this.$emit("created");
   },
@@ -406,17 +407,21 @@ export default {
     ...mapActions(["cacheSelectData", "searchInSelect", "getTableModel"]),
     // получение актуальных данных
     getData() {
-      let selectDataOptions = {
-        table: this.table,
-        options: this.options,
-      };
-      // включаем индикацию загрузки данных
-      this.dataLoading = true;
-      // грузим данные в стейт
-      this.cacheSelectData(selectDataOptions).finally(() => {
-        // выключаем индикацию загрузки данных
-        this.dataLoading = false;
-      });
+      if (!this.sourceData || this.sourceData.length == 0) {
+        let selectDataOptions = {
+          table: this.table,
+          options: this.options,
+        };
+        // включаем индикацию загрузки данных
+        this.dataLoading = true;
+        // грузим данные в стейт
+        this.cacheSelectData(selectDataOptions).finally(() => {
+          // выключаем индикацию загрузки данных
+          this.dataLoading = false;
+        });
+      } else {
+        this.setEqualValue();
+      }
     },
     // добавление записи
     addClick() {
@@ -480,7 +485,7 @@ export default {
     valuesComparator(a, b) {
       // console.log(`a=${JSON.stringify(a)}, b=${JSON.stringify(b)}`);
       if (a && b) {
-        if ((typeof a === typeof b) === "object") {
+        if (typeof a === "object" && typeof b === "object") {
           if (Array.isArray(a)) {
             if (Array.isArray(b)) {
               return (
@@ -542,6 +547,16 @@ export default {
         }
       }
     },
+    // выбрать единственное значение в списке
+    setEqualValue() {
+      if (
+        this.chooseEqual &&
+        this.dataCompleteLoaded &&
+        (!this.inputValue || this.inputValue == 1)
+      ) {
+        if (this.sourceData.length == 1) this.val = this.sourceData[0];
+      }
+    },
   },
   computed: {
     // значение селекта
@@ -578,9 +593,10 @@ export default {
         // return this.inputValue;
       },
       set(newValue) {
-        console.log(`newValue=${JSON.stringify(newValue)}`);
+        // console.log(`newValue=${JSON.stringify(newValue)}`);
         if (newValue) {
           if (this.multiple) {
+            if (!Array.isArray(newValue)) newValue = [newValue];
             // console.log(`newValue=${JSON.stringify(newValue)}`);
             this.$emit(
               "input",
@@ -835,13 +851,11 @@ export default {
       //   }, chooseEqual=${this.chooseEqual}
       //     table=${this.table}`
       // );
-      if (
-        this.chooseEqual &&
-        this.dataCompleteLoaded &&
-        (!this.inputValue || this.inputValue == 1)
-      ) {
-        if (this.sourceData.length == 1) this.val = this.sourceData[0];
-      }
+      if (this.chooseEqual) this.setEqualValue();
+    },
+    table() {
+      this.filterLine = null;
+      this.getData();
     },
   },
 };

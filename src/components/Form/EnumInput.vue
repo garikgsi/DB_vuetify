@@ -1,6 +1,7 @@
 <template>
   <div>
     <!-- {{ inputValue }} -->
+    <!-- {{ items }} -->
     <abp-select
       v-if="isSelect"
       v-bind="basicProps"
@@ -96,25 +97,52 @@ export default {
     // формализованный массив данных для компонента
     componentItems() {
       return this.items.map((item, i) => {
-        return { id: i + 1, text: item };
+        // если передан массив объектов
+        if (typeof item === "object") {
+          return {
+            id: item.id !== undefined ? item.id : i + 1,
+            text: item.text !== undefined ? item.text : item,
+            color: item.color !== undefined ? item.color : "primary",
+          };
+        } else {
+          // если передан список примитивов
+          return {
+            id: i + 1,
+            text: item,
+          };
+        }
       });
     },
     // значения компонентов
     componentInputValue: {
       get() {
-        try {
-          return this.componentItems.find((item) => {
-            return item.text == this.inputValue;
-          }).id;
-        } catch (error) {
-          // null return below
+        if (this.inputValue) {
+          // если в итемсы передан массив объектов
+          if (typeof this.items[0] === "object") {
+            return this.inputValue;
+          } else {
+            // если в итемсы передан массив примитивов
+            try {
+              return this.componentItems.find((item) => {
+                return item.text == this.inputValue;
+              }).id;
+            } catch (error) {
+              // null return below
+            }
+          }
         }
         return null;
       },
       set(newValue) {
-        let formalizeVal = this.componentItems.find((item) => {
-          return item.id == newValue;
-        }).text;
+        let formalizeVal;
+        // если в итемсы передан массив объектов
+        if (typeof this.items[0] === "object") {
+          formalizeVal = newValue;
+        } else {
+          formalizeVal = this.componentItems.find((item) => {
+            return item.id == newValue;
+          }).text;
+        }
         this.$emit("input", formalizeVal);
       },
     },

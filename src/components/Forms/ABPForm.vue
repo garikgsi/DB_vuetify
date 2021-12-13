@@ -1,9 +1,13 @@
 <template>
   <div>
+    <!-- hasRealSubTables={{ hasRealSubTables }} -->
+    <!-- subTables={{ subTables }}, showTabs={{ showTabs }} -->
     <!-- {{formValid}} -->
     <!-- {{formExtensions}} -->
-    <!-- {{subTableItems.length}} {{fullValid}} -->
-    <!-- {{formValues}} -->
+    <!-- items length ={{ subTableItems.length }}, fullValid= {{ fullValid }}, -->
+    <!-- formValues= {{ formValues }} -->
+    <!-- <br />
+    <br /> -->
     <!-- {{fields}} -->
     <!-- {{allSelectsLoaded}} || {{selectsLoaded}} || {{selects}} || {{selects.length}} -->
     <!-- {{tableType}} -->
@@ -13,157 +17,182 @@
     <!-- {{hasPermissions}} -->
     <!-- {{ lazyData }} -->
     <!-- =>{{ itemsTotal }} -->
+    <!-- keyModel={{ keyModel }} -->
+    <!-- stateValues={{ stateValues }},
+    <br />
+    <br />
+    <br />
+    <br />
+    morphFields={{ morphFields }},
+    <br />
+    <br />
+-->
+    <!-- keyModelInit={{ keyModelInit }} -->
+    <!-- inputDataValues={{ inputDataValues }}, -->
+    <!-- keyModelValues={{ keyModelValues }}, -->
 
     <div v-if="tableReady">
-      <abp-tabs v-model="activeTab" :tabs="tabs" :disabled="formDisabled">
-        <!-- форма -->
-        <!-- {{showWaitingMessage}} -->
-        <template v-slot:[formSlot]>
-          <abp-simple-form
-            v-if="tableReady"
-            v-model="formValues"
-            :title="title"
-            :model="visibleFields"
-            :loading="formLoading"
-            :buttons="null"
-            :closable="closable"
-            :singleFieldRow="singleFieldRow"
-            :setFocus="setFocus"
-            :readonly="readonly"
-            :disabled="formDisabled"
-            @startLoading="startLoading"
-            @endLoading="endLoading"
-            @buttonClick="onButtonClick"
-            @clickClose="clickClose"
-            @validated="formValidated($event)"
-          >
-            <template v-slot:after-fields>
-              <v-lazy v-model="lazyData.groups">
-                <abp-groups
-                  v-if="showGroups && !miniForm"
-                  :table="table"
-                  :id="id"
-                ></abp-groups>
-              </v-lazy>
-              <!-- табличная часть документа -->
-              <v-lazy v-model="lazyData.itemsTable">
-                <div v-if="showSubTable">
-                  <v-divider></v-divider>
-                  <abp-document-table
-                    :table="subTable.table"
-                    :title="subTable.title"
-                    :sklad-id="formValues[subTable.skladId]"
-                    :no-nds="!withNds"
-                    color="primary"
-                    v-model="subTableItems"
-                    :readonly="readonly"
-                    :disabled="!formValid"
-                    :with-series="withSeries"
-                    :with-series-editor="withSeriesEditor"
-                    :total="itemsTotal"
-                    @validated="tableValidated($event)"
-                  ></abp-document-table>
-                </div>
-              </v-lazy>
-              <slot name="after-fields"></slot>
-            </template>
-            <!-- левая секция кнопок -->
-            <template v-slot:buttons-left>
-              <slot name="buttons-left">
-                <v-btn
-                  :disabled="!fullValid"
-                  color="primary"
-                  @click.stop="onSubmit(true)"
-                >
-                  OK
-                </v-btn>
-                <template v-if="!miniForm">
+      <keep-alive>
+        <abp-tabs
+          v-model="activeTab"
+          :tabs="tabs"
+          :disabled="formDisabled"
+          :stateName="stateName"
+          :saveState="saveState"
+        >
+          <!-- форма -->
+          <!-- {{showWaitingMessage}} -->
+          <template v-slot:[formSlot]>
+            <abp-simple-form
+              v-if="tableReady"
+              v-model="formValues"
+              :title="title"
+              :model="visibleFields"
+              :loading="formLoading"
+              :buttons="null"
+              :closable="closable"
+              :singleFieldRow="singleFieldRow"
+              :setFocus="setFocus"
+              :readonly="readonly"
+              :disabled="formDisabled"
+              @startLoading="startLoading"
+              @endLoading="endLoading"
+              @buttonClick="onButtonClick"
+              @clickClose="clickClose"
+              @validated="formValidated($event)"
+            >
+              <template v-slot:after-fields>
+                <v-lazy v-model="lazyData.groups">
+                  <abp-groups
+                    v-if="showGroups && !miniForm"
+                    :table="table"
+                    :id="id"
+                  ></abp-groups>
+                </v-lazy>
+                <!-- табличная часть документа -->
+                <v-lazy v-model="lazyData.itemsTable">
+                  <div v-if="showSubTable">
+                    <v-divider></v-divider>
+                    <abp-document-table
+                      :table="subTable.table"
+                      :title="subTable.title"
+                      :sklad-id="
+                        formValues[subTable.skladId]
+                          ? formValues[subTable.skladId]
+                          : null
+                      "
+                      :no-nds="!withNds"
+                      color="primary"
+                      v-model="subTableItems"
+                      :readonly="readonly"
+                      :disabled="!formValid"
+                      :with-series="withSeries"
+                      :with-series-editor="withSeriesEditor"
+                      :total="itemsTotal"
+                      @validated="tableValidated($event)"
+                    ></abp-document-table>
+                  </div>
+                </v-lazy>
+                <slot name="after-fields"></slot>
+              </template>
+              <!-- левая секция кнопок -->
+              <template v-slot:buttons-left>
+                <slot name="buttons-left">
                   <v-btn
                     :disabled="!fullValid"
                     color="primary"
-                    @click.stop="onSubmit(false)"
+                    @click.stop="onSubmit(true)"
                   >
-                    Сохранить
+                    OK
                   </v-btn>
-                  <template v-if="isDocument">
+                  <template v-if="!miniForm">
                     <v-btn
-                      v-if="!isActive"
                       :disabled="!fullValid"
-                      color="success"
-                      @click.stop="makeActiveAndSubmit(true)"
+                      color="primary"
+                      @click.stop="onSubmit(false)"
                     >
-                      Провести
+                      Сохранить
                     </v-btn>
-                    <v-btn
-                      v-if="isActive"
-                      :disabled="!fullValid"
-                      color="secondary"
-                      @click.stop="makeUnactiveAndSubmit(true)"
-                    >
-                      Распровести
-                    </v-btn>
+                    <template v-if="isDocument">
+                      <v-btn
+                        v-if="!isActive"
+                        :disabled="!fullValid"
+                        color="success"
+                        @click.stop="makeActiveAndSubmit(true)"
+                      >
+                        Провести
+                      </v-btn>
+                      <v-btn
+                        v-if="isActive"
+                        :disabled="!fullValid"
+                        color="secondary"
+                        @click.stop="makeUnactiveAndSubmit(true)"
+                      >
+                        Распровести
+                      </v-btn>
+                    </template>
                   </template>
-                </template>
-              </slot>
-            </template>
-            <!-- правая секция кнопок -->
-            <template v-slot:buttons-right>
-              <v-btn v-if="canSwitchMini" @click="toggleMiniForm" text>
-                {{ miniFormTitle }}
-              </v-btn>
-            </template>
-          </abp-simple-form>
-          <abp-waiting-message v-else>
-            {{ waitMessage }}
-          </abp-waiting-message>
-        </template>
-        <!-- Все файлы в 1 вкладке -->
-        <template v-slot:all-files v-if="showFilesTab">
-          <v-expansion-panels flat multiple v-model="filesPanel">
-            <template v-for="(panel, i) in filesPanelItems">
-              <v-expansion-panel :key="`panel_${i}`">
-                <v-expansion-panel-header>
-                  {{ panel.title }}
-                </v-expansion-panel-header>
-                <v-expansion-panel-content>
-                  <v-lazy v-model="lazyData[panel.name]">
-                    <abp-table-files-extension
-                      :table="table"
-                      :id="id"
-                      :type="panel.name"
-                    >
-                    </abp-table-files-extension>
-                  </v-lazy>
-                </v-expansion-panel-content>
-                <v-divider></v-divider>
-              </v-expansion-panel>
-            </template>
-          </v-expansion-panels>
-        </template>
-        <!-- подчиненные таблицы -->
-        <template v-for="tab in subTableTabs" v-slot:[tab.name]>
-          <abp-form-sub-table
-            :key="`st_${tab.keys.foreign_table}_${id}`"
-            :table="tab.keys.foreign_table"
-            :keyModel="tab.keyModel"
-          ></abp-form-sub-table>
-        </template>
-        <!-- кнопка закрыть -->
-        <template v-slot:after>
-          <slot name="after">
-            <v-row>
-              <v-col
-                v-if="!miniForm && tableReady && withCloseButton"
-                class="d-flex align-end flex-column"
-              >
-                <v-btn text class="ma-4" @click.stop="closeAction">
-                  Закрыть
+                </slot>
+              </template>
+              <!-- правая секция кнопок -->
+              <template v-slot:buttons-right>
+                <v-btn v-if="canSwitchMini" @click="toggleMiniForm" text>
+                  {{ miniFormTitle }}
                 </v-btn>
-              </v-col>
-            </v-row>
-          </slot>
-        </template>
-      </abp-tabs>
+              </template>
+            </abp-simple-form>
+            <abp-waiting-message v-else>
+              {{ waitMessage }}
+            </abp-waiting-message>
+          </template>
+          <!-- Все файлы в 1 вкладке -->
+          <template v-slot:all-files v-if="showFilesTab">
+            <v-expansion-panels flat multiple v-model="filesPanel">
+              <template v-for="(panel, i) in filesPanelItems">
+                <v-expansion-panel :key="`panel_${i}`">
+                  <v-expansion-panel-header>
+                    {{ panel.title }}
+                  </v-expansion-panel-header>
+                  <v-expansion-panel-content>
+                    <v-lazy v-model="lazyData[panel.name]">
+                      <abp-table-files-extension
+                        :table="table"
+                        :id="id"
+                        :type="panel.name"
+                      >
+                      </abp-table-files-extension>
+                    </v-lazy>
+                  </v-expansion-panel-content>
+                  <v-divider></v-divider>
+                </v-expansion-panel>
+              </template>
+            </v-expansion-panels>
+          </template>
+          <!-- подчиненные таблицы -->
+          <template v-for="tab in subTableTabs" v-slot:[tab.name]>
+            <abp-form-sub-table
+              :key="`st_${tab.keys.foreign_table}_${id}`"
+              :table="tab.keys.foreign_table"
+              :keyModel="tab.keyModel"
+            ></abp-form-sub-table>
+          </template>
+          <!-- кнопка закрыть -->
+          <template v-slot:after>
+            <slot name="after">
+              <v-row>
+                <v-col
+                  v-if="!miniForm && tableReady && withCloseButton"
+                  class="d-flex align-end flex-column"
+                >
+                  <v-btn text class="ma-4" @click.stop="closeAction">
+                    Закрыть
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </slot>
+          </template>
+        </abp-tabs>
+      </keep-alive>
     </div>
   </div>
 </template>
@@ -320,7 +349,7 @@ export default {
       // таблица провалидирована
       tableValid: false,
       // активный таб
-      activeTab: 0,
+      activeTab: null,
       // всего селектов в форме
       selects: [],
       // загруженных селектов в форме
@@ -337,6 +366,8 @@ export default {
         image: false,
         itemsTable: false,
       },
+      // keyModel инициирован
+      keyModelInit: false,
     };
   },
   created() {
@@ -350,6 +381,24 @@ export default {
   },
   computed: {
     ...mapGetters(["prevRoute", "serviceFieldNames"]),
+    // запоминать открытую вкладку
+    saveState() {
+      // только для таблиц с идентифицированными id
+      return (
+        this.table !== undefined &&
+        this.id !== undefined &&
+        this.modType == "edit"
+      );
+    },
+    // идентификатор таба для сохранения состояния открытой вкладки
+    stateName() {
+      try {
+        return `${this.table}Form_${this.id}`;
+      } catch (error) {
+        // default return below
+      }
+      return "abpForm";
+    },
     // кол-во записей в тааблице items
     itemsTotal() {
       try {
@@ -364,20 +413,142 @@ export default {
     formDisabled() {
       return this.disabled;
     },
+    // полиморфные поля
+    morphFields() {
+      if (this.fields) {
+        return this.fields.filter((field) => {
+          return field.type == "morph";
+        });
+      }
+      return null;
+    },
+    // значения из стейта
+    stateValues() {
+      // заменять полиморфные поля в объект
+      // let replaceMorph = ["edit", "copy"].includes(this.modType);
+      let replaceMorph = true;
+      // значения modType, при которых берем значения из стейта
+      let stateTypes = ["copy", "edit"];
+      // пытвемся получить значения из стейта
+      try {
+        if (stateTypes.includes(this.modType))
+          return this.transformMorph2Form(
+            this.$store.state.table.formData[this.table][this.id],
+            replaceMorph
+          );
+      } catch (error) {
+        // default return below
+      }
+      return {};
+    },
+    // значения из инпута
+    inputDataValues() {
+      // заменять полиморфные поля в объект
+      // let replaceMorph = ["edit", "copy"].includes(this.modType);
+      let replaceMorph = true;
+      // console.log(`replaceMorph=${replaceMorph}`);
+      try {
+        return this.setDefaultValues(
+          this.transformMorph2Form(this.modelValue),
+          replaceMorph
+        );
+      } catch (error) {
+        // default return below
+      }
+      return {};
+    },
+    // значения из keyModel
+    keyModelValues() {
+      if (this.keyModel) {
+        // console.log(`keyModel=${JSON.stringify(this.keyModel)}`);
+        let res = {};
+        for (let keyField of this.keyModel) {
+          if (typeof keyField == "object") res = { ...res, ...keyField };
+        }
+        return res;
+      }
+      return {};
+    },
+
+    // значения формы
     formValues: {
       get() {
-        //
-        try {
-          if (this.id)
-            return this.$store.state.table.formData[this.table][this.id];
-        } catch (error) {
-          // modelValue returned
+        let res = {
+          ...this.stateValues,
+          ...this.inputDataValues,
+        };
+        // если keyModel еще не был инициирован - заменим этими значениями инпуты
+        if (!this.keyModelInit) {
+          res = { ...res, ...this.keyModelValues };
         }
-        return this.modelValue;
+        // items
+        try {
+          if (
+            this.hasSubTables &&
+            this.subTable &&
+            this.stateValues[this.subTable.method]
+          ) {
+            res[this.subTable.method] = this.stateValues[this.subTable.method];
+          }
+        } catch (error) {
+          // no subTable
+        }
+        return res;
+        // //
+        // let sourceValues = {};
+        // try {
+        //   if (this.id)
+        //     sourceValues = this.$store.state.table.formData[this.table][
+        //       this.id
+        //     ];
+        // } catch (error) {
+        //   // modelValue returned
+        // }
+        // sourceValues = this.modelValue;
+        // // преобразуем morph-поля
+        // if (this.fields) {
+        //   this.fields.forEach((field) => {
+        //     // определенный формат для специфичных полей
+        //     let morphValue = {};
+        //     switch (field.type) {
+        //       case "morph": {
+        //         if (
+        //           sourceValues[`${field.name}_id`] &&
+        //           sourceValues[`${field.name}_type`]
+        //         ) {
+        //           morphValue = {
+        //             [`${field.name}_id`]: sourceValues[`${field.name}_id`],
+        //             [`${field.name}_type`]: sourceValues[`${field.name}_type`],
+        //           };
+        //         } else {
+        //           morphValue = {
+        //             [`${field.name}_id`]: 1,
+        //             [`${field.name}_type`]: null,
+        //           };
+        //         }
+        //         if (sourceValues[field.name] !== undefined) {
+        //           sourceValues[field.name] = morphValue;
+        //         } else {
+        //           Vue.set(sourceValues, field.name, morphValue);
+        //         }
+        //       }
+        //     }
+        //   });
+        // }
+        // return sourceValues;
       },
       set(newVal) {
-        console.log(`setting abpform data ${JSON.stringify(newVal)}`);
-        this.$emit("input", newVal);
+        // начальная инициализация keyModel - только до первого обновления инпутов
+        this.keyModelInit = true;
+        // изменяем полиморфные поля в зависимости от переданного компонентом объекта
+        let transVal = this.transformMorphFromForm(newVal);
+        // console.log(
+        //   `new form Values=${JSON.stringify(newVal)}, transVal=${JSON.stringify(
+        //     transVal
+        //   )}`
+        // );
+        // console.log(`setting abpform data ${JSON.stringify(newVal)}`);
+        this.$emit("input", transVal);
       },
     },
     formLoading: {
@@ -543,7 +714,8 @@ export default {
         (this.showImages ||
           this.showGroups ||
           this.showDocuments ||
-          this.showFileList)
+          this.showFileList ||
+          this.hasRealSubTables)
       );
     },
     filesPanelItems() {
@@ -567,23 +739,49 @@ export default {
       }
       return null;
     },
+    // есть подчиненные таблицы, кроме items
+    hasRealSubTables() {
+      let count = 0;
+      if (this.hasSubTables) {
+        for (let table in this.subTables) {
+          let sub = this.subTables[table];
+          try {
+            if (sub.method !== undefined && sub.method != "items") count++;
+          } catch (error) {
+            // do nothing
+          }
+        }
+      }
+      return count > 0;
+    },
     subTableTabs() {
       if (this.subTables) {
         let res = [];
         for (let table in this.subTables) {
           let sub = this.subTables[table];
-          if (sub.keys) {
-            let keyModel = {};
-            keyModel[sub.keys.foreign] = this.id;
-            res.push({
-              title: sub.title,
-              icon: sub.icon ? sub.icon : "mdi-table",
-              name: `sub_table_${sub.table}`,
-              type: "sub_table",
-              disabled: !this.showSubTables,
-              keys: sub.keys,
-              keyModel: [keyModel],
-            });
+          if (sub.method != "items") {
+            if (sub.keys) {
+              let keyModel = {};
+              // для простых связей
+              if (sub.keys.foreign !== undefined) {
+                keyModel[sub.keys.foreign] = this.id;
+              } else if (sub.keys.morph !== undefined) {
+                // для полиморфных связей
+                keyModel[`${sub.keys.morph}_id`] = this.id;
+                keyModel[
+                  `${sub.keys.morph}_type`
+                ] = this.formExtensions.props.app_model;
+              }
+              res.push({
+                title: sub.title,
+                icon: sub.icon ? sub.icon : "mdi-table",
+                name: `sub_table_${sub.table}`,
+                type: "sub_table",
+                disabled: !this.showSubTables,
+                keys: sub.keys,
+                keyModel: [keyModel],
+              });
+            }
           }
         }
         return res;
@@ -745,6 +943,43 @@ export default {
           }
           model = resModel;
         }
+        // замены свойств поля из модели
+        model = model.map((field) => {
+          if (field.props) {
+            if (typeof field.props === "object") {
+              // все доступные modType
+              let modTypes = ["add", "edit", "copy"];
+              let hasModType = false;
+              // свойства, которые заменим в поле
+              let props = null;
+              // проанализируем ключи props
+              for (let propKey in field.props) {
+                // console.log(
+                //   `propKey=${propKey}, props=${JSON.stringify(
+                //     field.props[propKey]
+                //   )}`
+                // );
+                if (modTypes.includes(propKey)) hasModType = true;
+                if (propKey == this.modType) {
+                  props = field.props[this.modType];
+                }
+              }
+
+              // если в ключах не найдены modTypes - выдаем все параметры
+              if (!hasModType) {
+                props = field.props;
+              }
+              // если свойства найдены - заменим их
+              if (props) {
+                field.props = props;
+              } else {
+                field.props = null;
+              }
+              // console.log(`props=${JSON.stringify(props)}`);
+            }
+          }
+          return field;
+        });
         return model;
       }
       return null;
@@ -826,96 +1061,136 @@ export default {
     },
     // заполняем реактивными данными
     loadValues() {
-      if (this.fields) {
-        // если значения не переданы в v-model - заполним дефолтными
-        if (
-          (this.formValues &&
-            ((this.isDocument && Object.keys(this.formValues).length > 1) ||
-              (!this.isDocument &&
-                Object.keys(this.formValues).length > 0))) === false
-        ) {
-          if (this.modType != "edit") {
-            // console.log(`set defaults | this.modType=='edit'=${this.modType=='edit'}  this.modType=${this.modType} this.formValues=${JSON.stringify(this.formValues)} && !!this.formValues=${!!this.formValues} && Object.keys(this.inputValue).length=${Object.keys(this.inputValue).length}`)
-            // заполним дефолтными значениями
-            this.fields.forEach((field) => {
-              let fieldValue = null;
-              if (field.default) {
-                fieldValue = field.default;
-              } else {
-                let selectFields = ["select", "foreign_select"];
-                if (selectFields.indexOf(field.type) !== -1) {
-                  fieldValue = 1;
-                }
-              }
-              Vue.set(this.formValues, field.name, fieldValue);
-            });
-          }
-        }
-        this.fields.forEach((field) => {
-          let fieldValue = null;
-          // определенный формат для специфичных полей
-          switch (field.type) {
-            case "morph":
-              {
-                // console.log(`morph field ${field.name} executed`);
-                // if (this.formValues[field.name]) {
-                //   console.log(
-                //     `morph values exists ${JSON.stringify(
-                //       this.formValues[field.name]
-                //     )}`
-                //   );
-                // }
-                fieldValue = {};
-                fieldValue[field.name + "_id"] =
-                  this.formValues &&
-                  this.formValues[field.name + "_id"] !== undefined
-                    ? this.formValues[field.name + "_id"]
-                    : 1;
-                fieldValue[field.name + "_type"] =
-                  this.formValues &&
-                  this.formValues[field.name + "_type"] !== undefined
-                    ? this.formValues[field.name + "_type"]
-                    : null;
-                // console.log(`${field.name}=${JSON.stringify(fieldValue)}`);
-                if (this.formValues[field.name]) {
-                  this.modelValue[field.name] = { ...fieldValue };
-                } else {
-                  Vue.set(this.modelValue, field.name, fieldValue);
-                }
-                // console.log(`res=${JSON.stringify(this.modelValue)}`);
-                // console.log(`morph value ${JSON.stringify(fieldValue)} set ${JSON.stringify(this.formValues[field.name])}`)
-                // }
-              }
-              break;
-          }
-        });
-
-        // если переданы связи таблиц - заменим значения из keyModel
-        if (this.keyModel) {
-          for (let keyField of this.keyModel) {
-            this.formValues = { ...this.formValues, ...keyField };
-          }
-        }
-
-        this.dataLoaded = true;
-        // наполним селектами форму
-        // this.fields.forEach((field) => {
-        //   if (field.type == "select") {
-        //     if (this.selects.indexOf(field.table) === -1) {
-        //       this.selects.push(field.table);
-        //       if (this.$store.state.table.selectData[field.table]) {
-        //         this.selectsLoaded++;
-        //       } else {
-        //         this.getSelectData(field.table).then(() => {
-        //           this.selectsLoaded++;
-        //         });
-        //       }
-        //     }
-        //   }
-        // });
-        this.selectsChecked = true;
-      }
+      this.dataLoaded = true;
+      this.selectsChecked = true;
     },
+    //   loadValues() {
+    //     if (this.fields) {
+    //       // если значения не переданы в v-model - заполним дефолтными
+    //       // if (
+    //       //   (this.formValues &&
+    //       //     ((this.isDocument && Object.keys(this.formValues).length > 1) ||
+    //       //       (!this.isDocument &&
+    //       //         Object.keys(this.formValues).length > 0))) === false
+    //       // ) {
+    //       //   if (this.modType != "edit") {
+    //       //     // console.log(`set defaults | this.modType=='edit'=${this.modType=='edit'}  this.modType=${this.modType} this.formValues=${JSON.stringify(this.formValues)} && !!this.formValues=${!!this.formValues} && Object.keys(this.inputValue).length=${Object.keys(this.inputValue).length}`)
+    //       //     // заполним дефолтными значениями
+    //       //     this.fields.forEach((field) => {
+    //       //       let fieldValue = null;
+    //       //       if (field.default) {
+    //       //         fieldValue = field.default;
+    //       //       } else {
+    //       //         let selectFields = ["select", "foreign_select"];
+    //       //         if (selectFields.indexOf(field.type) !== -1) {
+    //       //           fieldValue = 1;
+    //       //         }
+    //       //       }
+    //       //       Vue.set(this.formValues, field.name, fieldValue);
+    //       //     });
+    //       //   }
+    //       // }
+    //       // this.fields.forEach((field) => {
+    //       //   let fieldValue = null;
+    //       //   // определенный формат для специфичных полей
+    //       //   switch (field.type) {
+    //       //     case "morph":
+    //       //       {
+    //       //         // console.log(`morph field ${field.name} executed`);
+    //       //         // if (this.formValues[`${field.name}`]) {
+    //       //         //   console.log(
+    //       //         //     `morph values exists ${JSON.stringify(
+    //       //         //       this.formValues[field.name]
+    //       //         //     )}`
+    //       //         //   );
+    //       //         // }
+    //       //         fieldValue = {};
+    //       //         fieldValue[field.name + "_id"] =
+    //       //           this.formValues &&
+    //       //           this.formValues[field.name + "_id"] !== undefined
+    //       //             ? this.formValues[field.name + "_id"]
+    //       //             : 1;
+    //       //         fieldValue[field.name + "_type"] =
+    //       //           this.formValues &&
+    //       //           this.formValues[field.name + "_type"] !== undefined
+    //       //             ? this.formValues[field.name + "_type"]
+    //       //             : null;
+    //       //         // console.log(`${field.name}=${JSON.stringify(fieldValue)}`);
+    //       //         if (this.formValues[field.name]) {
+    //       //           console.log(
+    //       //             `set existed ${field.name} form ${JSON.stringify(
+    //       //               this.formValues[field.name]
+    //       //             )} to ${JSON.stringify(fieldValue)}`
+    //       //           );
+    //       //           this.modelValue[field.name] = { ...fieldValue };
+    //       //         } else {
+    //       //           console.log(
+    //       //             `set new ${field.name} to ${JSON.stringify(fieldValue)}`
+    //       //           );
+    //       //           Vue.set(this.modelValue, field.name, fieldValue);
+    //       //         }
+    //       //         // console.log(`res=${JSON.stringify(this.modelValue)}`);
+    //       //         // console.log(`morph value ${JSON.stringify(fieldValue)} set ${JSON.stringify(this.formValues[field.name])}`)
+    //       //         // }
+    //       //       }
+    //       //       break;
+    //       //   }
+    //       // });
+
+    //       // если переданы связи таблиц - заменим значения из keyModel
+    //       // if (this.keyModel) {
+    //       //   // console.log(`keyModel=${JSON.stringify(this.keyModel)}`);
+    //       //   let modelReplaces = {};
+    //       //   for (let keyField of this.keyModel) {
+    //       //     modelReplaces = { ...modelReplaces, ...keyField };
+    //       //     // найдем ключ (field) и значение keyField[field]
+    //       //     for (let field in keyField) {
+    //       //       if (this.formValues[field]) {
+    //       //         console.log(
+    //       //           `formValues[${field}]=${JSON.stringify(
+    //       //             this.formValues[field]
+    //       //           )}`
+    //       //         );
+    //       //         this.formValues[field] = keyField[field];
+    //       //       } else {
+    //       //         console.log(`no formValues[${field}]`);
+    //       //         Vue.set(this.formValues, field, keyField[field]);
+    //       //       }
+    //       //       console.log(
+    //       //         `mod formValues[${field}]=${JSON.stringify(
+    //       //           this.formValues[field]
+    //       //         )}`
+    //       //       );
+    //       //     }
+    //       //   }
+    //       // console.log(`modelReplaces=${JSON.stringify(modelReplaces)}`);
+
+    //       // this.formValues = {
+    //       //   ...this.formValues,
+    //       //   ...modelReplaces,
+    //       // };
+    //       // console.log(`formValues=${JSON.stringify(this.formValues)}`);
+    //     }
+
+    //     this.dataLoaded = true;
+    //     // наполним селектами форму
+    //     // this.fields.forEach((field) => {
+    //     //   if (field.type == "select") {
+    //     //     if (this.selects.indexOf(field.table) === -1) {
+    //     //       this.selects.push(field.table);
+    //     //       if (this.$store.state.table.selectData[field.table]) {
+    //     //         this.selectsLoaded++;
+    //     //       } else {
+    //     //         this.getSelectData(field.table).then(() => {
+    //     //           this.selectsLoaded++;
+    //     //         });
+    //     //       }
+    //     //     }
+    //     //   }
+    //     // });
+    //     this.selectsChecked = true;
+    //   },
+    // },
     // проверяем булев признак поля, например require, show_in_form и т.п.
     checkFieldProp(field, prop, defaultVal = false) {
       let fieldProp = defaultVal;
@@ -948,11 +1223,15 @@ export default {
 
     onSubmit(close = false, withPost = null) {
       if (this.hasPermissions) {
-        // console.log(`submit with modtype=${this.modType}, close=${close}`)
         this.$emit("submit");
         if (!this.disableDefaultSubmit) {
           // console.log(`submitting`)
           let saveVals = { ...this.formValues };
+          // console.log(
+          //   `submit with modtype=${
+          //     this.modType
+          //   }, close=${close}, formValues=${JSON.stringify(this.formValues)}`
+          // );
           this.startLoading();
           let payload = {
             table: this.table,
@@ -1050,10 +1329,120 @@ export default {
     // copyOptionsFormSubmit() {
     //   this.copyOptionsIsSet = true
     // }
+    // преобразование модели полиморфных полей в модель SimpleForm
+    transformMorph2Form(fields, withReplace = true) {
+      if (this.morphFields && this.morphFields.length > 0) {
+        // добавить реактивное св-во для полиморфа
+        let addReact = false;
+        // let morphFields = {};
+        this.morphFields.forEach((morphField) => {
+          let mfName = morphField.name;
+          if (
+            fields[`${mfName}_id`] !== undefined ||
+            fields[`${mfName}_type`] !== undefined
+          ) {
+            let replace = false;
+            if (fields[mfName] === undefined) {
+              replace = true;
+              addReact = true;
+            } else {
+              if (withReplace) {
+                replace = true;
+              }
+            }
+            if (replace) {
+              let morphVal = {
+                [`${mfName}_type`]: null,
+                [`${mfName}_id`]: null,
+              };
+              morphVal[`${mfName}_id`] =
+                fields[`${mfName}_id`] !== undefined
+                  ? fields[`${mfName}_id`]
+                  : null;
+              morphVal[`${mfName}_type`] =
+                fields[`${mfName}_type`] !== undefined
+                  ? fields[`${mfName}_type`]
+                  : null;
+              if (addReact) {
+                Vue.set(fields, mfName, morphVal);
+              } else {
+                fields[mfName] = { ...morphVal };
+              }
+            }
+            // if (fields[mfName] === undefined) {
+            //   console.log(`no reactive ${mfName} field`);
+            //   Vue.set(fields, mfName, morphFields[mfName]);
+            // }
+          }
+        });
+        return fields;
+      }
+      return fields;
+    },
+    // преобразование полиморфов из модели SimpleForm обратно
+    transformMorphFromForm(fields) {
+      if (this.morphFields && this.morphFields.length > 0) {
+        let morphFields = {};
+        this.morphFields.forEach((morphField) => {
+          let mfName = morphField.name;
+          if (fields[mfName] && typeof fields[mfName] == "object") {
+            let mValues = fields[mfName];
+            if (mValues[`${mfName}_id`])
+              morphFields[`${mfName}_id`] = mValues[`${mfName}_id`];
+            if (mValues[`${mfName}_type`])
+              morphFields[`${mfName}_type`] = mValues[`${mfName}_type`];
+          }
+        });
+        return { ...fields, ...morphFields };
+      }
+      return fields;
+    },
+    // для всех запросов, кроме редактирования - заполним дефолтные значения
+    setDefaultValues(fields) {
+      if (
+        this.fields &&
+        this.modType != "edit" &&
+        ((this.isDocument && Object.keys(fields).length > 1) ||
+          (!this.isDocument && Object.keys(fields).length > 0))
+      ) {
+        // console.log(`set defaults | this.modType=='edit'=${this.modType=='edit'}  this.modType=${this.modType} this.formValues=${JSON.stringify(this.formValues)} && !!this.formValues=${!!this.formValues} && Object.keys(this.inputValue).length=${Object.keys(this.inputValue).length}`)
+        // заполним дефолтными значениями
+        this.fields.forEach((f) => {
+          let fieldValue = null;
+          if (fields[f.name]) {
+            // val exists
+          } else {
+            if (f.default) {
+              fieldValue = f.default;
+            } else {
+              switch (f.type) {
+                case "select":
+                case "foreign_select":
+                  {
+                    fieldValue = 1;
+                  }
+                  break;
+                case "multiselect": {
+                  fieldValue = [];
+                }
+              }
+              fields[f.name] = fieldValue;
+            }
+          }
+        });
+      }
+      return fields;
+    },
   },
+  //
   watch: {
+    // готовность формы
     tableReady(isReady) {
       if (isReady) this.$emit("loaded");
+    },
+    // изменение таба
+    tab(newTab) {
+      this.$emit("tabChange", newTab);
     },
     //     formValues(newValue) {
     //         console.log(`emiited new data from abp-form ${JSON.stringify(newValue)}`)

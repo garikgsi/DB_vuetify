@@ -45,12 +45,12 @@
             v-model="ts"
         ></abp-table> -->
     {{ k1 }}
-    <abp-form
+    <kontragent-form
       table="kontragents"
-      :id="710"
+      :id="751"
       mod-type="edit"
       v-model="k1"
-    ></abp-form>
+    ></kontragent-form>
     <!-- <abp-tabs
             v-model="tabsVal"
             :tabs="tabs"
@@ -145,7 +145,8 @@ import { mapGetters, mapActions } from "vuex";
 // import ABPFilters from '../Filters/ABPFilters'
 // import ABPTable from '../Tables/ABPTable'
 // import ABPTabs from '../Misc/ABPTabs'
-import ABPForm from "../Forms/ABPForm";
+// import ABPForm from "../Forms/ABPForm";
+import KontragentFormVue from "../Forms/KontragentForm.vue";
 // import StockBalanceInput from "../Form/StockBalanceInput";
 // import SkladMoveFormVue from '../Forms/SkladMoveForm.vue'
 // import ABPForeignInputVue from "../Form/ABPForeignInput.vue";
@@ -163,7 +164,8 @@ export default {
     // 'abp-filters' : ABPFilters,
     // 'abp-table' : ABPTable,
     // 'abp-tabs' : ABPTabs,
-    "abp-form": ABPForm,
+    // "abp-form": ABPForm,
+    "kontragent-form": KontragentFormVue,
     // "stock-balance-input": StockBalanceInput,
     // 'sklad-move-form' : SkladMoveFormVue,
     // "abp-foreign-input": ABPForeignInputVue,

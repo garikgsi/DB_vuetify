@@ -1,93 +1,140 @@
 <template>
-    <div>
-        <v-text-field
-            :prepend-inner-icon="prependIcon"
-            :value="inputValue"
-            :label="settings.title"
-            :rules="rules"
-            :readonly="readonly"
-            :hint="settings.hint"
-            :prepend-icon="settings.icon"
-            @click:prepend-inner="sendEmail"
-            @input="changeInput($event)"
-            @change="emailChange($event)"
-        ></v-text-field>
-    </div>
+  <div>
+    <v-text-field
+      :prepend-inner-icon="prependIcon"
+      :value="inputValue"
+      :label="settings.title"
+      :rules="rules"
+      :readonly="isReadonly"
+      :hint="settings.hint"
+      :prepend-icon="settings.icon"
+      @click:prepend-inner="sendEmail"
+      @input="changeInput($event)"
+      @change="emailChange($event)"
+    >
+      <template v-slot:append>
+        <abp-icon-button
+          :disabled="!isClearable"
+          icon="mdi-close"
+          tip="Очистить"
+          :disable-tab="true"
+          @click="doClear"
+        ></abp-icon-button>
+      </template>
+    </v-text-field>
+  </div>
 </template>
 
 <script>
-    export default {
-        model: {
-            prop: "inputValue",
-            event: "input"
-        },
-        props: {
-            inputValue: {
-                required: true,
-            },
-            settings: {
-                type: Object,
-                required: false
-            },
-        },
-        data() {
-            return {
-                email: this.inputValue
-            }
-        },
-        created() {
-        },
-        mounted() {
-            this.$emit('loaded')
-        },
-        methods: {
-            changeInput(newValue) {
+import ABPIconButtonVue from "./ABPIconButton.vue";
+export default {
+  name: "email-input",
+  components: {
+    "abp-icon-button": ABPIconButtonVue,
+  },
+  model: {
+    prop: "inputValue",
+    event: "input",
+  },
+  props: {
+    inputValue: {
+      required: true,
+    },
+    settings: {
+      type: Object,
+      required: false,
+    },
+    clearable: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
+    readonly: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    require: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    title: {
+      type: String,
+      required: false,
+      default: null,
+    },
+    hint: {
+      type: String,
+      required: false,
+      default: null,
+    },
+  },
+  data() {
+    return {
+      email: this.inputValue,
+    };
+  },
+  created() {},
+  mounted() {
+    this.$emit("loaded");
+  },
+  methods: {
+    changeInput(newValue) {
+      this.$emit("input", newValue);
+    },
+    emailChange(newValue) {
+      this.email = newValue;
+    },
+    sendEmail() {
+      if (this.prependIcon) {
+        alert(`Отправляем на ${this.email}`);
+      }
+    },
+    doClear() {
+      this.$emit("clear");
+      this.changeInput(null);
+    },
+  },
+  computed: {
+    rules() {
+      let res = [];
 
-                this.$emit('input', newValue)
-            },
-            emailChange(newValue) {
-                this.email = newValue
-            },
-            sendEmail() {
-                if (this.prependIcon) {
-                    alert(`Отправляем на ${this.email}`)
-                }
-            }
-        },
-        computed: {
-            rules() {
-                if (!this.readonly && this.required) {
-                    return [
-                        v => !!v || `Заполните ${this.settings.title}`,
-                        v => /.+@.+\..+/.test(v) || 'Введите правильный адрес электронной почты'
-                    ]
-                } else {
-                    return [
-                        true
-                    ]
-                }
-            },
-            isEmailValid() {
-                let emailExpr = /.+@.+\../
-                if (this.email && emailExpr.test(this.email)) {
-                    return true
-                } else {
-                    return false
-                }
-            },
-            readonly() {
-                return this.settings.readonly || false
-            },
-            required() {
-                return this.settings.require || false
-            },
-            prependIcon() {
-                if (!!this.settings.showAction && this.isEmailValid) {
-                    return 'mdi-email-send'
-                } else {
-                    return null
-                }
-            }
-        }
-    }
+      if (!this.readonly && this.required) {
+        return res.push((v) => !!v || `Заполните ${this.settings.title}`);
+      }
+      res.push(
+        (v) =>
+          (!!v && /.+@.+\..+/.test(v)) ||
+          !v ||
+          "Введите правильный адрес электронной почты"
+      );
+      return res;
+    },
+    isEmailValid() {
+      let emailExpr = /.+@.+\../;
+      if (this.email && emailExpr.test(this.email)) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    isReadonly() {
+      return this.settings.readonly || this.readonly || false;
+    },
+    required() {
+      return this.settings.require || false;
+    },
+    prependIcon() {
+      if (!!this.settings.showAction && this.isEmailValid) {
+        return "mdi-email-send";
+      } else {
+        return null;
+      }
+    },
+    isClearable() {
+      return this.clearable !== false && !this.readonly && !!this.inputValue;
+    },
+  },
+};
 </script>

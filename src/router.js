@@ -95,6 +95,23 @@ const router = new Router({
                     return res
                 }
             },
+            // таблица сотрудников
+            {
+                path: '/table/sotrudniks',
+                name: 'sotrudniks',
+                component: ABPTable,
+                props(route) {
+                    let res = {
+                        table: 'sotrudniks',
+                        keyModel: [{
+                            employeable: {employeable_type:'App\\Firm'}
+                        }]
+                    }
+                    res = {...res, ...route.params}
+                    res.modType = route.params.modType ? route.params.modType : 'add'
+                    return res
+                }
+            },
             // обычная таблица
             {
                 path: '/table/:table',

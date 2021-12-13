@@ -80,19 +80,24 @@ export default {
             'sklad_move_items': {sortBy: ['id'], sortDesc: [false], limit: 100},
             'recipe_items': {sortBy: ['id'], sortDesc: [false], limit: 100},
             'file_drivers': {sortBy: ['comment'], sortDesc: [false], limit: 10},
+            'contracts': {sortBy: ['contract_date'], sortDesc: [true], multiSort: false},
+            'orders': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false},
         },
         // отображение столбцов в таблице по умолчанию
         showCols:{
             'nomenklatura': ['id', 'name', 'part_num','manufacturer_id','description','manufacturer','main_image','ostatok','avg_price','stock_balance'],
             'sklad_receives': ['in_doc_num','in_doc_date','summa','kontragent_id','sklad_id'],
-            'kontragents': ['name', 'inn']
+            'kontragents': ['name', 'inn'],
+            'orders':['doc_date','comment']
         },
         // отображение столбцов в мобильной версии
         showMobileCols: {
             'nomenklatura': ['${name} (${description})', 'Производитель: ${manufacturer}','Остаток: ${ostatok} ${ed_ism}'],
             'sotrudniks' : ['fio', 'firm_position'],
             'sklad_receives' : [' № ${doc_num} от ${doc_date}', 'от ${kontragent}', 'на сумму ${summa}'],
-            'recipe_items' : [' № ${nomenklatura} x ${kolvo} ${ed_ism}']
+            'recipe_items' : [' № ${nomenklatura} x ${kolvo} ${ed_ism}'],
+            'contracts' : [' № ${contract_num} от ${contract_date}', 'от ${kontragent}'],
+            'orders' : [' № ${doc_num} от ${doc_date} (${comment})'],
         }
     },
 
@@ -779,13 +784,25 @@ export default {
                     if (o.not_id) filters += `id ni ${JSON.stringify(o.not_id)}`
                     // связки по keyModel
                     if (o.keyModel && o.keyModel.length>0) {
+                        // console.log(`keyModel=${JSON.stringify(o.keyModel)}`)
                         o.keyModel.forEach((km, i) => {
                             // console.log(`km=${km}, i=${i}`)
                             if (filters!=='' || i>0) filters += ' and '
                             for (let field in km) {
-                                filters += `${field} eq ${km[field]}`
+                                if (typeof(km[field])=='object') {
+                                    // console.log(`${field}(object)=${JSON.stringify(km[field])}`)
+                                    let mi = 0
+                                    for (let morphKey in km[field]) {
+                                        if (mi>0) filters += ' and '
+                                        filters += `${morphKey} eq ${km[field][morphKey]}`
+                                        mi++
+                                    }
+                                } else {
+                                    filters += `${field} eq ${km[field]}`
+                                }
                             }
                         })
+                        // console.log(`filters=${JSON.stringify(filters)}`)
                     }
                     // фильтры
                     if (o.filters) {
@@ -869,6 +886,7 @@ export default {
 
         // получить данные записи
         async getFormData({commit, dispatch, getters}, payload) {
+            let debug = payload.tableName == 'fuck you'
             // получим модель таблицы
             let model = await dispatch('getTableModel', payload.tableName)
             // console.log(`payload.tableName=${payload.tableName}, model=${JSON.stringify(model)}`)
@@ -887,39 +905,39 @@ export default {
                         formData = {...data}
                         // подчиненная таблица items
                         let itemsTable = null
-// console.log(`sub_tables=${JSON.stringify(model.extensions.sub_tables)}`)                                
+                        if (debug) console.log(`sub_tables=${JSON.stringify(model.extensions.sub_tables)}`)                                
                         // анализируем модель на предмет наличия в записи items
                         for (let subTableName in model.extensions.sub_tables) {
-// console.log(`analize ${subTableName}`)                                
+                            if (debug) console.log(`analize ${subTableName}`)                                
                             let st = model.extensions.sub_tables[subTableName]
                             if (st.method == 'items') {
                                 itemsTable = {...st}
-// console.log(`st.method (${st.method})===items`)                                
+                                if (debug) console.log(`st.method (${st.method})===items`)                                
                                 break;
                             } else {
 
-// console.log(`st.method (${st.method})!=items`)                                
+                                if (debug) console.log(`st.method (${st.method})!=items`)                                
                             }
                         }
                         if (itemsTable) {
-// console.log(`itemsTable = ${JSON.stringify(itemsTable)}`)                                
+                            if (debug) console.log(`itemsTable = ${JSON.stringify(itemsTable)}`)                                
                             // если itemsTable нашлась - загрузим данные пакетами
                             // получим модель itemsTable
                             dispatch('getTableModel', itemsTable.table).then((stModel)=>{
-// console.log(`stModel=${JSON.stringify(stModel)}`)                                
+                                if (debug) console.log(`stModel=${JSON.stringify(stModel)}`)                                
                                 // найдем ключевое поле
                                 try {
                                     let keyField = stModel.fields.find(field=>{
                                         return field.type=='key'
                                     }).name
                                     if (keyField) {
-// console.log(`keyField=${JSON.stringify(keyField)}`)                                
+                                        if (debug) console.log(`keyField=${JSON.stringify(keyField)}`)                                
                                         // данные itemsTable
                                         let itemsTableData = []
                                         commit('CLEAR_TABLE_ITEMS_DATA',{tableName: payload.table, id:payload.id, method:itemsTable.method})
                                         // формируем опции запроса
                                         let itemsOptions = {table:itemsTable.table ,options:{filters:{[keyField]:payload.id}, limit:-1}}
-// console.log(`itemsOptions= ${JSON.stringify(itemsOptions)}`)                                                    
+                                        if (debug) console.log(`itemsOptions= ${JSON.stringify(itemsOptions)}`)                                                    
                                         // пакетное получение данных
                                         dispatch('getPacketData', {
                                             ...itemsOptions,
@@ -930,7 +948,7 @@ export default {
                                                     // добавляем данные
                                                     itemsTableData = [...itemsTableData, ...data]
                                                     let payloadStData = {tableName: payload.tableName, id:payload.id, method:itemsTable.method, data}                                                    
-// console.log(`payloadStData = ${JSON.stringify(payloadStData)}`)                                                    
+                                                    if (debug) console.log(`payloadStData = ${JSON.stringify(payloadStData)}`)                                                    
                                                     commit('ADD_TABLE_ITEMS_DATA',payloadStData)
                                                     // обновляем кол-во записей в itemsTable
                                                     let itemsTableCountPayload = {table: payload.tableName, id:payload.id, method:itemsTable.method, count}
@@ -947,7 +965,7 @@ export default {
                                 }
                             })
                         } else {
-// console.log(`NO ITEMS TABLE!`)                            
+                            if (debug) console.log(`NO ITEMS TABLE!`)                            
                         }
                     }
                     commit('SET_FORM_DATA',{tableName: payload.tableName, data:formData})

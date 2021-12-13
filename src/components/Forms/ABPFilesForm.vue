@@ -3,7 +3,7 @@
     <!-- {{values}} -->
     <abp-simple-form
       :inputValue="values"
-      :model="model" 
+      :model="model"
       :singleFieldRow="true"
       @submit="submit"
       @input="changeInput($event)"
@@ -63,6 +63,9 @@ export default {
         name = name.substring(0, pos);
       }
       return name;
+    },
+    changeInput(newVal) {
+      this.$emit("input", newVal);
     },
   },
   watch: {

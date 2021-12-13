@@ -1,12 +1,14 @@
 <template>
   <div>
     <!-- {{ settings }} -->
+    <!-- {{ componentProps }} -->
+    <!-- {{ settings.props }} -->
     <component
       :is="component"
       :settings="settings"
       :class="{ 'require-field': required }"
       v-if="component"
-      v-bind="settings"
+      v-bind="componentProps"
       :required="required"
       :inputValue="inputValue"
       @input="changeInput($event)"
@@ -37,9 +39,18 @@ export default {
     };
   },
   computed: {
+    // замены свойств компонента
+    componentProps() {
+      let res = {};
+      if (this.settings) res = { ...res, ...this.settings };
+      if (this.settings.props) res = { ...res, ...this.settings.props };
+      return res;
+    },
+    // загрузчик
     loader() {
       return () => import(`./${this.componentName}.vue`);
     },
+    // имя файла компонента
     componentName() {
       let componentName;
       switch (this.settings.type) {
@@ -203,7 +214,7 @@ export default {
   },
   methods: {
     changeInput(newValue) {
-      // console.log(`input changed to ${JSON.stringify(newValue)}`)
+      // console.log(`input changed to ${JSON.stringify(newValue)}`);
       this.$emit("input", newValue);
     },
     fieldLoaded() {

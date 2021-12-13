@@ -12,6 +12,7 @@
       :disable-params="true"
       multiple
       with-chips
+      :chooseEqual="false"
       @input="changeInput($event)"
     ></abp-select>
   </div>

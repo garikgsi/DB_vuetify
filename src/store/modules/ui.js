@@ -44,6 +44,12 @@
                 icon: 'mdi-card-account-details-outline',
                 route: '/table/kontragents',
             },
+            {
+                name: 'catalog-firms',
+                title: 'Организации',
+                icon: 'mdi-account-supervisor-circle',
+                route: '/table/firms',
+            },
             // действия
             {
                 name: 'action-sklad-receive',
@@ -78,7 +84,8 @@
                 'catalog-kontragents',
                 'report-sklad-remains',
                 'catalog-nomenklatura',
-                'catalog-sotrudniks'
+                'catalog-sotrudniks',
+                'catalog-firms'
             ],
             desktop: [
 

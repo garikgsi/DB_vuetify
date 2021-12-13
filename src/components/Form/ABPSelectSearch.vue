@@ -1,10 +1,11 @@
 <template>
   <v-toolbar color="primary" dark dense flat tile>
     <abp-icon-button
+      v-if="!disableParams"
       icon="mdi-sort-bool-descending-variant"
       large
       tip="Подбор по параметрам"
-      :disabled="disabled || disableParams"
+      :disabled="disabled"
       @click="doParams"
     ></abp-icon-button>
     <v-text-field
@@ -20,6 +21,7 @@
     >
     </v-text-field>
     <abp-icon-button
+      v-if="!disableAdd"
       :disabled="!completeLoaded || !editable"
       icon="mdi-plus-circle-outline"
       large
@@ -70,6 +72,12 @@ export default {
     },
     // отключить подбор по параметрам
     disableParams: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // убрать функционал добавления записи
+    disableAdd: {
       type: Boolean,
       required: false,
       default: false,
