@@ -315,8 +315,22 @@
             </slot>
           </template>
           <!-- форматирование заголовков -->
-          <template v-slot:[`header.actions`]>
+          <!-- <template v-slot:[`header.actions`]>
             <span style="width:50px;"></span>
+          </template> -->
+          <template
+            v-slot:[`header.${header.value}`]
+            v-for="(header, i) in headers"
+          >
+            <span
+              :key="`col-${i}`"
+              :class="[
+                'abp-column',
+                `col-${header.value}`,
+                `col-type-${header.type}`,
+              ]"
+              >{{ header.text }}</span
+            >
           </template>
           <!-- форматирование значений в ячейках таблицы в соответствии с типом -->
           <template
@@ -327,7 +341,15 @@
               :value="`item.${field.name}`"
               v-bind="{ field: field, item: item }"
             >
-              <div :key="`item.${field.value}`">
+              <div
+                :key="`item.${field.value}`"
+                :class="[
+                  'text-truncate',
+                  'abp-column',
+                  `col-${field.value}`,
+                  `col-type-${field.type}`,
+                ]"
+              >
                 <!-- чекбоксы -->
                 <div v-if="field.type == 'boolean'">
                   <v-simple-checkbox
@@ -1008,5 +1030,28 @@ export default {
 .data-list > .v-list-group--active {
   border-right: 5px solid;
   border-color: var(--border-color);
+}
+
+.abp-column {
+  // display: inline-block;
+  &.col-actions {
+    width: 50px !important;
+  }
+  &.col-name,
+  &.col-description {
+    max-width: 300px !important;
+  }
+  &.col-type-kolvo,
+  &.col-type-money {
+    width: 100px !important;
+    float: right;
+  }
+  &.col-type-select {
+    max-width: 100px;
+  }
+  &.col-nomenklatura {
+    max-width: 100%;
+    width: 100%;
+  }
 }
 </style>

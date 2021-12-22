@@ -47,9 +47,7 @@
         <!-- проверки -->
         <v-stepper-content :step="2">
           <v-card :disabled="stepperDisabled">
-            <v-card-text
-              class="px-0"
-            >
+            <v-card-text class="px-0">
               <abp-production-items-table
                 :data="val"
               ></abp-production-items-table>
@@ -239,7 +237,7 @@ export default {
       this.getPrintForm({ table: this.table, id: this.val.id }).then(
         (response) => {
           window.open(
-            response.data,
+            response,
             "_blank",
             `form_${this.table}_${this.val.id}_download`
           );
@@ -328,13 +326,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .clickable-step {
-    cursor: pointer;
-  }
-  .menu-btn {
-    margin-left: 0.5rem;
-  }
-  .v-stepper__content {
-    padding: 0 !important;
-  }
+.clickable-step {
+  cursor: pointer;
+}
+.menu-btn {
+  margin-left: 0.5rem;
+}
+.v-stepper__content {
+  padding: 0 !important;
+}
 </style>

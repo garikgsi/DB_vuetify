@@ -103,7 +103,12 @@
         </template>
  -->
   <tr>
-    <td v-for="(col, colIndex) in headers" :key="`col_${colIndex}`" :id="rowId">
+    <td
+      v-for="(col, colIndex) in headers"
+      :key="`col_${colIndex}`"
+      :id="rowId"
+      :class="[`abp-doc-table-col`, `col-${col.value}`, `col-type-${col.type}`]"
+    >
       <!-- действия -->
       <div v-if="col.value == 'actions'">
         <v-row>
@@ -383,5 +388,19 @@ export default {
 <style lang="scss" scoped>
 .v-text-field > .v-input__control > .v-input__slot:before {
   border: none;
+}
+.abp-doc-table-col {
+  &.col-type-select > div {
+    max-width: 400px !important;
+  }
+  &.col-type-kolvo,
+  &.col-type-money {
+    & > div {
+      width: 200px !important;
+    }
+  }
+  &.col-nds_id > div {
+    max-width: 200px !important;
+  }
 }
 </style>

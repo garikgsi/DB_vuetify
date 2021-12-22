@@ -31,7 +31,7 @@ export default {
                 page: 1,
                 itemsPerPage: 10,
                 sortBy: ['name'],
-                sortDesc: false,
+                sortDesc: [false],
                 multiSort: false,
             }
         },
@@ -82,13 +82,15 @@ export default {
             'file_drivers': {sortBy: ['comment'], sortDesc: [false], limit: 10},
             'contracts': {sortBy: ['contract_date'], sortDesc: [true], multiSort: false},
             'orders': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false},
+            'acts': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false},
         },
         // отображение столбцов в таблице по умолчанию
         showCols:{
             'nomenklatura': ['id', 'name', 'part_num','manufacturer_id','description','manufacturer','main_image','ostatok','avg_price','stock_balance'],
             'sklad_receives': ['in_doc_num','in_doc_date','summa','kontragent_id','sklad_id'],
             'kontragents': ['name', 'inn'],
-            'orders':['doc_date','comment']
+            'orders':['doc_date','comment'],
+            'acts':['kontragent','contract_type','doc_num','doc_date','sklad_id','sum']
         },
         // отображение столбцов в мобильной версии
         showMobileCols: {
@@ -98,6 +100,7 @@ export default {
             'recipe_items' : [' № ${nomenklatura} x ${kolvo} ${ed_ism}'],
             'contracts' : [' № ${contract_num} от ${contract_date}', 'от ${kontragent}'],
             'orders' : [' № ${doc_num} от ${doc_date} (${comment})'],
+            'acts' : [' № ${doc_num} от ${doc_date}', 'c ${kontragent}', 'на сумму ${sum}'],
         }
     },
 
@@ -1003,6 +1006,11 @@ export default {
             })
         },
 
+        // очистка кэша стора в селекте
+        clearCacheSelectData({commit},{table}) {
+            commit('CLEAR_SELECT_DATA',{table})
+        },
+
         // сохранить в стор данные для селекта
         async cacheSelectData({dispatch, state, commit},{table, options, scope }) {
             // режим отладки
@@ -1017,6 +1025,10 @@ export default {
                 if (debug) console.log(`load data`)
                 // индикация загрузки данных
                 commit('SET_SELECT_LOADING',{table, isLoading:true})
+                // // если есть опции - очистим стейт
+                // if (Object.keys(options).length>0 && !scope) {
+                //     commit('CLEAR_SELECT_DATA',{table})
+                // }
                 // опции получения данных
                 let dataOptions = {table, options:{...{trashed:true, odata:'list', offset:0, limit:-1, fields:['id']}, ...options}}
                 // получаем данные
@@ -1188,7 +1200,6 @@ export default {
             })
         },
 
-// TODO
         // получить данные для связных селектов
         getForeignSelectData({dispatch},{table, options}) {
             return new Promise((resolve, reject)=>{

@@ -4,6 +4,7 @@
     <!-- {{ selected }} -->
     <!-- table keyModel = {{ keyModel }} -->
     <!-- {{ filters }} -->
+    <!-- printable={{ printable }} -->
     <abp-simple-table
       v-if="tableModel && tableOptions && dataItems"
       :title="title"
@@ -74,82 +75,99 @@
         <slot name="append-top-actions"></slot>
       </template>
       <!-- вывод действий в строке -->
-      <template v-slot:[`item.actions`]="{ item }" v-if="editable">
+      <template v-slot:[`item.actions`]="{ item }">
         <!-- для мобилы -->
         <div v-if="isMobile">
-          <v-btn
-            color="primary"
-            text
-            :to="{
-              name: 'form',
-              params: {
-                table: tableName,
-                id: item.id,
-                modType: 'edit',
-                keyModel: keyModel,
-              },
-            }"
-          >
-            Править
-          </v-btn>
-          <v-btn
-            color="primary"
-            text
-            :to="{
-              name: 'form',
-              params: {
-                table: tableName,
-                id: item.id,
-                modType: 'copy',
-                keyModel: keyModel,
-              },
-            }"
-          >
-            Копировать
-          </v-btn>
-          <abp-delete-button
-            title="Подтвердите удаление"
-            :text="'Вы действительно хотите удалить запись из таблицы?'"
-            :disabled="item.permissions.delete != 1"
-            tip="удалить"
-            :icon="false"
-            btn-text="Удалить"
-            :btn-props="{ text: true, color: 'secondary' }"
-            @click="actionDelete(item)"
-          >
-          </abp-delete-button>
+          <template v-if="editable">
+            <v-btn
+              color="primary"
+              text
+              :to="{
+                name: 'form',
+                params: {
+                  table: tableName,
+                  id: item.id,
+                  modType: 'edit',
+                  keyModel: keyModel,
+                },
+              }"
+            >
+              Править
+            </v-btn>
+            <v-btn
+              color="primary"
+              text
+              :to="{
+                name: 'form',
+                params: {
+                  table: tableName,
+                  id: item.id,
+                  modType: 'copy',
+                  keyModel: keyModel,
+                },
+              }"
+            >
+              Копировать
+            </v-btn>
+            <abp-delete-button
+              title="Подтвердите удаление"
+              :text="'Вы действительно хотите удалить запись из таблицы?'"
+              :disabled="item.permissions.delete != 1"
+              tip="удалить"
+              :icon="false"
+              btn-text="Удалить"
+              :btn-props="{ text: true, color: 'secondary' }"
+              @click="actionDelete(item)"
+            >
+            </abp-delete-button>
+          </template>
+          <template v-if="printable">
+            <v-btn color="primary" text @click="printForm(item.id)">
+              Печать
+            </v-btn>
+          </template>
         </div>
         <!-- для десктопа -->
         <v-row v-else class="action-table-buttons">
-          <template v-if="itemsTable && isDocument">
+          <template v-if="printable">
             <abp-icon-button
-              v-if="parseInt(item.is_active) === 1"
-              icon="mdi-checkbox-marked-circle"
-              tip="распровести"
-              color="success"
-              @click="actionSetUnactive(item)"
+              icon="mdi-printer"
+              tip="Печать"
+              :disabled="parseInt(item.id) < 2"
+              @click="printForm(item.id)"
             ></abp-icon-button>
-            <abp-icon-button
-              v-else
-              icon="mdi-checkbox-marked-circle"
-              tip="провести"
-              @click="actionSetActive(item)"
-            ></abp-icon-button>
-            <v-divider vertical></v-divider>
           </template>
-          <abp-icon-button
-            icon="mdi-content-copy"
-            tip="копировать"
-            :disabled="item.permissions.copy != 1"
-            @click="actionCopy(item)"
-          ></abp-icon-button>
-          <abp-delete-button
-            title="Подтвердите удаление"
-            :text="'Вы действительно хотите удалить запись из таблицы?'"
-            :disabled="item.permissions.delete != 1"
-            tip="удалить"
-            @click="actionDelete(item)"
-          ></abp-delete-button>
+          <template v-if="editable">
+            <template v-if="itemsTable && isDocument">
+              <abp-icon-button
+                v-if="parseInt(item.is_active) === 1"
+                icon="mdi-checkbox-marked-circle"
+                tip="распровести"
+                color="success"
+                @click="actionSetUnactive(item)"
+              ></abp-icon-button>
+              <abp-icon-button
+                v-else
+                icon="mdi-checkbox-marked-circle"
+                tip="провести"
+                @click="actionSetActive(item)"
+              ></abp-icon-button>
+              <v-divider vertical></v-divider>
+            </template>
+            <abp-icon-button
+              icon="mdi-content-copy"
+              tip="копировать"
+              :disabled="item.permissions.copy != 1"
+              @click="actionCopy(item)"
+            ></abp-icon-button>
+            <abp-delete-button
+              title="Подтвердите удаление"
+              :text="'Вы действительно хотите удалить запись из таблицы?'"
+              :disabled="item.permissions.delete != 1"
+              tip="удалить"
+              @click="actionDelete(item)"
+            ></abp-delete-button>
+          </template>
         </v-row>
       </template>
       <!-- вывод экспандера -->
@@ -461,7 +479,17 @@ export default {
       "setPost",
       "setTitle",
       "addItemsData",
+      "getPrintForm",
     ]),
+    // печатная форма
+    printForm(id) {
+      if (this.table) {
+        this.getPrintForm({ table: this.table, id }).then((response) => {
+          // console.log(`form=${JSON.stringify(response)}`);
+          window.open(response, "_blank", `form_${this.table}_${id}_download`);
+        });
+      }
+    },
     // открылся экспандер
     rowExpanded(event) {
       if (this.hasItemsTable) {
@@ -905,6 +933,18 @@ export default {
       }
       return null;
     },
+    // есть печатная форма
+    printable() {
+      try {
+        if (this.fullModel) {
+          return this.fullModel.extensions.props.printable;
+        }
+      } catch (e) {
+        // default return below
+      }
+      return false;
+    },
+    // выбранные значение
     selected: {
       get() {
         return this.inputValue || [];

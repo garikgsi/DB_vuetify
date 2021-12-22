@@ -73,7 +73,7 @@
                 <v-btn
                   v-if="button.type !== undefined && button.type == 'submit'"
                   type="submit"
-                  :disabled="!formValid"
+                  :disabled="!formValid || disabledSubmitButton"
                   :dark="button.dark || false"
                   :color="button.color || 'primary'"
                   :loading="formLoading"
@@ -178,6 +178,12 @@ export default {
     },
     // форма не активна
     disabled: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // кнопка сабмита не активна
+    disabledSubmitButton: {
       type: Boolean,
       required: false,
       default: false,

@@ -38,6 +38,7 @@ export default {
     "abp-copy-form": () => import("../Forms/ABPCopyForm.vue"),
     "kontragent-form": () => import("../Forms/KontragentForm.vue"),
     "rs-form": () => import("../Forms/RSForm.vue"),
+    "act-invoice-form": () => import("../Forms/SimpleInvoiceForm.vue"),
   },
   props: {
     table: {
@@ -100,6 +101,14 @@ export default {
         }
         case "rs": {
           return "rs-form";
+        }
+        case "acts":
+        case "invoices": {
+          if (this.modType == "edit") {
+            return "abp-form";
+          } else {
+            return "act-invoice-form";
+          }
         }
         default: {
           return "abp-form";

@@ -69,6 +69,12 @@
                 icon: 'mdi-wrench',
                 route: '/table/productions',
             },
+            {
+                name: 'action-acts',
+                title: 'Реализации',
+                icon: 'mdi-human-dolly',
+                route: '/table/acts',
+            },
             // отчеты
             {
                 name: 'report-sklad-remains',
@@ -85,7 +91,8 @@
                 'report-sklad-remains',
                 'catalog-nomenklatura',
                 'catalog-sotrudniks',
-                'catalog-firms'
+                'catalog-firms',
+                'action-acts'
             ],
             desktop: [
 

@@ -130,6 +130,12 @@
                       >
                         Распровести
                       </v-btn>
+                      <v-btn
+                        v-if="printable && formValues.id"
+                        @click="printForm"
+                      >
+                        Печать
+                      </v-btn>
                     </template>
                   </template>
                 </slot>
@@ -144,6 +150,14 @@
             <abp-waiting-message v-else>
               {{ waitMessage }}
             </abp-waiting-message>
+          </template>
+          <!-- подчиненные таблицы -->
+          <template v-for="tab in subTableTabs" v-slot:[tab.name]>
+            <abp-form-sub-table
+              :key="`st_${tab.keys.foreign_table}_${id}`"
+              :table="tab.keys.foreign_table"
+              :keyModel="tab.keyModel"
+            ></abp-form-sub-table>
           </template>
           <!-- Все файлы в 1 вкладке -->
           <template v-slot:all-files v-if="showFilesTab">
@@ -167,14 +181,6 @@
                 </v-expansion-panel>
               </template>
             </v-expansion-panels>
-          </template>
-          <!-- подчиненные таблицы -->
-          <template v-for="tab in subTableTabs" v-slot:[tab.name]>
-            <abp-form-sub-table
-              :key="`st_${tab.keys.foreign_table}_${id}`"
-              :table="tab.keys.foreign_table"
-              :keyModel="tab.keyModel"
-            ></abp-form-sub-table>
           </template>
           <!-- кнопка закрыть -->
           <template v-slot:after>
@@ -805,13 +811,6 @@ export default {
           name: "form",
           disabled: false,
         });
-        if (this.showFilesTab)
-          tabs.push({
-            title: "Файлы и изображения",
-            icon: "mdi-paperclip",
-            name: "all-files",
-            disabled: false,
-          });
         // if (this.showImages) tabs.push({'title':'Изображения', 'icon':'mdi-image', 'name':'image', 'disabled':false})
         // if (this.showDocuments) tabs.push({'title':'Файлы', 'icon':'mdi-paperclip', 'name':'files', 'disabled':false})
         // if (this.showFileList) tabs.push({'title':'Каталоги', 'icon':'mdi-file-tree', 'name':'file-list', 'disabled':false})
@@ -819,6 +818,14 @@ export default {
 
         // проверим подчиненные таблицы
         if (this.subTables) tabs = [...tabs, ...this.subTableTabs];
+        // файлы
+        if (this.showFilesTab)
+          tabs.push({
+            title: "Файлы и изображения",
+            icon: "mdi-paperclip",
+            name: "all-files",
+            disabled: false,
+          });
 
         return tabs;
       } else {
@@ -995,6 +1002,17 @@ export default {
       }
       return false;
     },
+    // есть печатная форма
+    printable() {
+      try {
+        if (this.formExtensions) {
+          return this.formExtensions.props.printable;
+        }
+      } catch (e) {
+        // default return below
+      }
+      return false;
+    },
   },
   methods: {
     ...mapActions([
@@ -1003,7 +1021,23 @@ export default {
       "getFormData",
       "setInformation",
       "saveAndPost",
+      "getPrintForm",
     ]),
+    // печатная форма
+    printForm() {
+      if (this.table && this.formValues.id) {
+        this.getPrintForm({ table: this.table, id: this.formValues.id }).then(
+          (response) => {
+            // console.log(`form=${JSON.stringify(response)}`);
+            window.open(
+              response,
+              "_blank",
+              `form_${this.table}_${this.formValues.id}_download`
+            );
+          }
+        );
+      }
+    },
     // начальная инициализация
     startInit() {
       this.getTableModel(this.table).then(() => {

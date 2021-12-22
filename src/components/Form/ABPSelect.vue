@@ -6,6 +6,7 @@
       selectedObjects
     }} -->
     <!-- inputValue={{ inputValue }} -->
+    <!-- options={{ options }} optionsChanged={{ optionsChanged }} -->
 
     <v-select
       v-model="val"
@@ -365,6 +366,8 @@ export default {
       formSelector: {},
       // id записи для редактирования
       inputId: 1,
+      // изменены опции загрузки данных
+      optionsChanged: false,
     };
   },
   async created() {
@@ -404,20 +407,33 @@ export default {
     this.$emit("created");
   },
   methods: {
-    ...mapActions(["cacheSelectData", "searchInSelect", "getTableModel"]),
+    ...mapActions([
+      "cacheSelectData",
+      "searchInSelect",
+      "getTableModel",
+      "clearCacheSelectData",
+    ]),
     // получение актуальных данных
     getData() {
-      if (!this.sourceData || this.sourceData.length == 0) {
+      if (
+        !this.sourceData ||
+        this.sourceData.length == 0 ||
+        this.optionsChanged
+      ) {
         let selectDataOptions = {
           table: this.table,
-          options: this.options,
         };
+        if (this.options) selectDataOptions.options = this.options;
         // включаем индикацию загрузки данных
         this.dataLoading = true;
         // грузим данные в стейт
         this.cacheSelectData(selectDataOptions).finally(() => {
+          // console.log(`data loaded`);
+
           // выключаем индикацию загрузки данных
           this.dataLoading = false;
+          // опции загрузки данных вернем в начальное состояние
+          this.optionsChanged = false;
         });
       } else {
         this.setEqualValue();
@@ -766,7 +782,11 @@ export default {
     },
     // индикация загрузки данных
     isLoading() {
-      return this.loading || (!this.useFilter && !this.dataCompleteLoaded);
+      return (
+        this.loading ||
+        (!this.options && !this.useFilter && !this.dataCompleteLoaded) ||
+        (this.options && this.optionsChanged)
+      );
     },
     // параметры таблицы подбора по
     tableParams() {
@@ -856,6 +876,14 @@ export default {
     table() {
       this.filterLine = null;
       this.getData();
+    },
+    // изменение опций
+    options() {
+      this.filterLine = null;
+      this.optionsChanged = true;
+      this.clearCacheSelectData({ table: this.table }).then(() => {
+        this.getData();
+      });
     },
   },
 };

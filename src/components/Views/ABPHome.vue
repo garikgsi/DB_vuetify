@@ -44,13 +44,13 @@
             :multiSelect="false"
             v-model="ts"
         ></abp-table> -->
-    {{ k1 }}
+    <!-- {{ k1 }}
     <kontragent-form
       table="kontragents"
       :id="751"
       mod-type="edit"
       v-model="k1"
-    ></kontragent-form>
+    ></kontragent-form> -->
     <!-- <abp-tabs
             v-model="tabsVal"
             :tabs="tabs"
@@ -134,11 +134,14 @@
         </abp-table-files-extension> -->
     <!-- {{ n1 }}
     <abp-field v-model="n1" :settings="settingsN1"></abp-field> -->
+    <!-- {{ invoiceForm }}
+    <simple-invoice-form v-model="invoiceForm"></simple-invoice-form> -->
   </div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from "vuex";
+// import SimpleInvoiceFormVue from "../Forms/SimpleInvoiceForm.vue";
 // import ABPSelectVue from "../Form/ABPSelect.vue";
 
 // import ABPField from "../Form/ABPField";
@@ -146,7 +149,7 @@ import { mapGetters, mapActions } from "vuex";
 // import ABPTable from '../Tables/ABPTable'
 // import ABPTabs from '../Misc/ABPTabs'
 // import ABPForm from "../Forms/ABPForm";
-import KontragentFormVue from "../Forms/KontragentForm.vue";
+// import KontragentFormVue from "../Forms/KontragentForm.vue";
 // import StockBalanceInput from "../Form/StockBalanceInput";
 // import SkladMoveFormVue from '../Forms/SkladMoveForm.vue'
 // import ABPForeignInputVue from "../Form/ABPForeignInput.vue";
@@ -165,7 +168,7 @@ export default {
     // 'abp-table' : ABPTable,
     // 'abp-tabs' : ABPTabs,
     // "abp-form": ABPForm,
-    "kontragent-form": KontragentFormVue,
+    // "kontragent-form": KontragentFormVue,
     // "stock-balance-input": StockBalanceInput,
     // 'sklad-move-form' : SkladMoveFormVue,
     // "abp-foreign-input": ABPForeignInputVue,
@@ -176,6 +179,7 @@ export default {
     // 'abp-nomenklatura-series-editor' : ABPNomenklaturaSeriesEditorVue
     // "abp-waiting-message": () => import("../Info/ABPWaitingMessage.vue"),
     // "abp-table-files-extension": () => import ("../Form/ABPTableFilesExtension.vue")
+    // "simple-invoice-form": SimpleInvoiceFormVue,
   },
   created() {
     // получим информацию о пользователе
@@ -185,6 +189,7 @@ export default {
   },
   data() {
     return {
+      invoiceForm: {},
       abpSelect: null,
       abpSelectObj: {},
       abpSelectArr: [25, 20, 4, 39, null, 28],

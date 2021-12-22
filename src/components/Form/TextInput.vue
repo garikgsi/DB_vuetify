@@ -48,7 +48,7 @@ export default {
     type: {
       type: String,
       required: false,
-      default: "text",
+      default: "string",
     },
     title: {
       type: String,
@@ -108,10 +108,12 @@ export default {
   computed: {
     rules() {
       let baseRules = [
-        (v) => !!v || `Заполните ${this.title ? this.title : " данное поле"}`,
+        (v) =>
+          (!!v && (this.inputType == "text" ? v.length > 0 : true)) ||
+          `Заполните ${this.title ? this.title : " данное поле"}`,
       ];
       let myRules = [];
-      switch (this.type) {
+      switch (this.inputType) {
         case "kolvo":
           {
             myRules.push(
@@ -144,7 +146,7 @@ export default {
       if (this.require && !this.readonly) {
         return [...baseRules, ...myRules];
       } else {
-        switch (this.type) {
+        switch (this.inputType) {
           case "text": {
             return [true];
           }
@@ -165,6 +167,7 @@ export default {
         case "int": {
           return "number";
         }
+        case "string":
         default: {
           return "text";
         }
