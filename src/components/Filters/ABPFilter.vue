@@ -5,6 +5,7 @@
       v-if="componentLoaded"
       v-bind="filter"
       :inputValue="inputValue"
+      :disabled="disabled"
       @input="changeInput($event)"
       @selected="selected($event)"
     />
@@ -27,6 +28,7 @@ export default {
     "date-filter": DateFilterVue,
     "radio-filter": () => import("./RadioFilter.vue"),
     "search-filter": () => import("./SearchFilter.vue"),
+    "morph-filter": () => import("./MorphFilter.vue"),
   },
   model: {
     prop: "inputValue",
@@ -39,6 +41,12 @@ export default {
     filter: {
       type: Object,
       required: true,
+    },
+    // функционал фильтра неактивен
+    disabled: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   computed: {
@@ -75,6 +83,11 @@ export default {
             componentName = "date-filter";
           }
           break;
+        case "morph":
+          {
+            componentName = "morph-filter";
+          }
+          break;
       }
       return componentName;
     },
@@ -83,6 +96,9 @@ export default {
         switch (this.filter.type) {
           case "select": {
             return !!this.filter.table;
+          }
+          case "morph": {
+            return !!this.filter.tables;
           }
           default: {
             return true;

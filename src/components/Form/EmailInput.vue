@@ -101,7 +101,7 @@ export default {
       let res = [];
 
       if (!this.readonly && this.required) {
-        return res.push((v) => !!v || `Заполните ${this.settings.title}`);
+        res.push((v) => !!v || `Заполните ${this.settings.title}`);
       }
       res.push(
         (v) =>

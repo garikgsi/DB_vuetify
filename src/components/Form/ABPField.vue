@@ -69,6 +69,16 @@ export default {
             componentName = "RTFInput";
           }
           break;
+        case "money":
+          {
+            componentName = "MoneyInput";
+          }
+          break;
+        case "kolvo":
+          {
+            componentName = "KolvoInput";
+          }
+          break;
         case "select":
           {
             if (this.items) {

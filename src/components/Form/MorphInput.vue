@@ -2,12 +2,15 @@
   <div v-if="inReactive">
     <!-- {{ inputValue }}, inputTable={{ inputTable }}, table={{ table }}, id={{
       id
-    }}
-    tableAppModel={{ tableAppModel }}, tables={{ tables }} -->
+    }} -->
+    <!-- tableAppModel={{ tableAppModel }}, tables={{ tables }} -->
     <!-- inputValue = {{ inputValue }}, outputValue={{ outputValue }}, inReactive={{
       inReactive
     }} -->
+    <!-- inReactive={{ inReactive }} typeInputComponent={{ typeInputComponent }}, -->
+    <!-- typeItems={{ typeItems }} -->
     <component
+      v-if="typeInputComponent"
       :is="typeInputComponent"
       class="morph-radio-input"
       :title="title"
@@ -19,6 +22,7 @@
       @input="changeTable"
     ></component>
     <abp-select
+      :title="typeInputComponent ? null : title"
       v-if="inReactive[`${name}_type`]"
       class="morph-select-input"
       :table="inReactive[`${name}_type`]"
@@ -28,6 +32,8 @@
       v-model="inReactive[`${name}_id`]"
       :options="selectOptions"
       :choose-equal="false"
+      :multiple="multiple"
+      :with-chips="multiple"
       @input="changeVal"
     ></abp-select>
   </div>
@@ -96,12 +102,20 @@ export default {
       required: false,
       default: false,
     },
+    // множественный выбор
+    multiple: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
       loading: false,
       tablesLoaded: 0,
       table: this.inputTable,
+      // текущая таблица (индикатор переключения пользователем)
+      currentTable: this.inputTable,
       // id:
       //   this.inputValue[`${this.name}_id`] !== undefined
       //     ? this.inputValue[`${this.name}_id`]
@@ -156,7 +170,7 @@ export default {
         return res;
       },
       set(newVal) {
-        console.log(`new inReactive=${JSON.tringify(newVal)}`);
+        // console.log(`new inReactive=${JSON.stringify(newVal)}`);
         let res = {};
         res[`${this.name}_type`] = this.findModelbyTable(
           newVal[[`${this.name}_type`]]
@@ -200,9 +214,10 @@ export default {
       if (this.typeItems.length > 3) {
         // return ABPSelectInput;
         return ABPSelect;
-      } else {
+      } else if (this.typeItems.length >= 1) {
         return RadioInput;
       }
+      return null;
     },
   },
   methods: {
@@ -236,20 +251,32 @@ export default {
         },
       };
 
+      if (this.inReactive[`${this.name}_type`])
+        res[`${this.name}_type`] = this.findModelbyTable(
+          this.inReactive[`${this.name}_type`]
+        );
       // console.log(`changed id to ${newValue}`);
+      // console.log(`change val=${JSON.stringify(res)}`);
+
       this.$emit("input", res);
     },
     changeTable(newValue) {
-      let res = {
-        ...this.inputValue,
-        ...{
-          [`${this.name}_type`]: this.findModelbyTable(newValue),
-          [`${this.name}_id`]: 1,
-        },
-      };
+      if (this.currentTable != newValue) {
+        let res = {
+          ...this.inputValue,
+          ...{
+            [`${this.name}_type`]: this.findModelbyTable(newValue),
+            [`${this.name}_id`]: this.multiple ? [] : 1,
+          },
+        };
 
-      // console.log(`changed table to ${newValue}`);
-      this.$emit("input", res);
+        // console.log(`changed table to ${newValue}`);
+        // console.log(`change table=${JSON.stringify(res)}`);
+        this.currentTable = newValue;
+        this.$emit("input", res);
+      } else {
+        // console.log(`changed table from ${this.currentTable} to ${newValue}`);
+      }
     },
   },
   watch: {

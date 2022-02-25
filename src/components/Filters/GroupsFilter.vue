@@ -1,7 +1,8 @@
 <template>
   <div>
+    <!-- {{ inputValue }} -->
     <abp-select
-      :disabled="!groupsLoaded"
+      :disabled="!groupsLoaded || disabled"
       :loading="!groupsLoaded"
       :inputValue="inputValue"
       :dataArray="groups"
@@ -38,6 +39,12 @@ export default {
     table: {
       type: String,
       required: true,
+    },
+    // функционал фильтра неактивен
+    disabled: {
+      type: Boolean,
+      required: false,
+      default: false,
     },
   },
   data() {

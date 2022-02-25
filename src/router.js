@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import store from './store/store';
 
 
 import ABPHome from '@/components/Views/ABPHome.vue'
@@ -150,7 +151,10 @@ router.beforeEach((to, from, next) => {
     }
 })
 
-// router.afterEach((to,from)=>{
-// })
+router.afterEach((to)=>{
+    // console.log(`to =${JSON.stringify(to)}`)
+    // после перехода изменим тайтл страницы согласно алгоритма приложения (vuex.app.setRouteTitle)
+    store.dispatch('setRouteTitle',to)
+})
 
 export default router

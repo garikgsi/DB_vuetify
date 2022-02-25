@@ -113,7 +113,7 @@ export default {
                 dispatch('request',{url, method:'get'})
                     .then(({is_error, error, data})=>{
                         if (is_error) {
-                            dispatch('pushError', error)
+                            // dispatch('pushError', error)
                             reject(error)
                         } else {
                             let userInfo = data[0]
@@ -143,7 +143,7 @@ export default {
                         resolve(response)
                     })
                     .catch(e=>{
-                        reject(e)
+                        reject(e) 
                     })
             })
         },

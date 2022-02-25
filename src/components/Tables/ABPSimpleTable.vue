@@ -394,7 +394,14 @@
                 >
                   <!-- будем выводить значение читателя (без последнего _id, например manufacturer вместо manufacturer_id) -->
                   <div v-if="item[field.value]">
-                    {{ item[field.value] }}
+                    <v-tooltip top>
+                      <template v-slot:activator="{ on, attrs }"
+                        ><span v-bind="attrs" v-on="on">
+                          {{ item[field.value] }}
+                        </span>
+                      </template>
+                      {{ item[field.value] }}
+                    </v-tooltip>
                   </div>
                   <div v-else>
                     <!-- нет смысла выводить нелепые цифры -->
@@ -402,7 +409,14 @@
                 </div>
                 <!-- все остальные типы полей - простой вывод значения -->
                 <div v-else>
-                  {{ item[field.value] }}
+                  <v-tooltip top>
+                    <template v-slot:activator="{ on, attrs }"
+                      ><span v-bind="attrs" v-on="on">
+                        {{ item[field.value] }}
+                      </span>
+                    </template>
+                    {{ item[field.value] }}
+                  </v-tooltip>
                 </div>
               </div>
             </slot>
@@ -420,18 +434,28 @@
               ></slot>
             </td>
           </template>
-          <!-- действие загрузить еще... -->
-          <template v-slot:[`body.append`]="{ headers, item }">
-            <slot name="body.append" v-bind="{ headers: headers, item: item }">
-              <td
-                :colspan="headers.length"
-                class="text-center"
-                v-if="showLoadMore"
-              >
-                <v-btn text color="primary" @click="loadMore"
-                  >загрузить еще ...</v-btn
-                >
-              </td>
+          <!-- итоги -->
+          <template v-slot:[`body.append`]="{ headers }">
+            <slot name="itogs" v-bind="{ headers: headers }">
+              <tr class="itogs" v-if="itogs">
+                <td v-for="(col, i) in headers" :key="`itogCol_${i}`">
+                  <template v-if="itogs[col.value]">
+                    <div
+                      v-if="['money', 'kolvo'].indexOf(col.type) !== -1"
+                      class="text-right"
+                      :class="{
+                        'error--text': parseFloat(itogs[col.value]) < 0,
+                      }"
+                    >
+                      {{ formatVal(itogs[col.value], col.type) }}
+                    </div>
+                    <div v-else>{{ itogs[col.value] }}</div>
+                  </template>
+                  <template v-else>
+                    <span></span>
+                  </template>
+                </td>
+              </tr>
             </slot>
           </template>
 
@@ -472,6 +496,10 @@ export default {
     // данные
     items: {
       type: Array,
+    },
+    // итоги
+    itogs: {
+      type: Object,
     },
     total: {
       type: Number,
@@ -546,8 +574,14 @@ export default {
       required: false,
       default: "mdi-refresh",
     },
-    // показывать кнопку фильтрации
+    // показывать блок фильтрации
     showFiltersBlock: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // показывать блок фильтрации раскрытым по умолчанию
+    showFiltersBlockExpanded: {
       type: Boolean,
       required: false,
       default: false,
@@ -669,7 +703,7 @@ export default {
         page: 1,
         itemsPerPage: 10,
       },
-      showFilters: this.showFiltersBlock,
+      showFilters: this.showFiltersBlock || this.showFiltersBlockExpanded,
       // отображать выбор столбцов
       showColumns: false,
       // массив запрещенных к отображению столбцов
@@ -1035,7 +1069,7 @@ export default {
 .abp-column {
   // display: inline-block;
   &.col-actions {
-    width: 50px !important;
+    width: 70px !important;
   }
   &.col-name,
   &.col-description {
@@ -1052,6 +1086,12 @@ export default {
   &.col-nomenklatura {
     max-width: 100%;
     width: 100%;
+  }
+}
+
+tr.itogs {
+  td {
+    border-top: 2px solid black;
   }
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- {{ vals }} -->
+    <!-- vals={{ vals }}, filters={{ filters }} -->
     <simple-filters
       :inputValue="vals"
       :filters="filters"
@@ -55,17 +55,60 @@ export default {
     },
     vals: {
       get() {
-        return this.inputValue;
+        let res = {};
+        if (this.filters) {
+          this.filters.forEach((filter) => {
+            if (this.inputValue[filter.name]) {
+              if (this.inputValue[filter.name].val) {
+                res[filter.name] = this.inputValue[filter.name].val;
+              } else {
+                res[filter.name] = this.inputValue[filter.name];
+              }
+            } else {
+              res[filter.name] = null;
+            }
+          });
+        }
+        return res;
+        // return this.inputValue;
       },
-      set(newVal) {
-        this.$emit("input", newVal);
+      set(/*newVal*/) {
+        // let res = {};
+        // if (this.filters) {
+        //   this.filters.forEach((filter) => {
+        //     if (newVal[filter.name]) {
+        //       res[filter.name] = {
+        //         type: filter.type,
+        //         val: newVal[filter.name],
+        //       };
+        //     }
+        //   });
+        // }
+        // this.$emit("input", res);
+        // this.$emit("input", newVal);
       },
     },
   },
   methods: {
     ...mapActions(["getTableFilters"]),
-    changeInput(newValue) {
-      this.$emit("input", newValue);
+    changeInput(newVal) {
+      let res = {};
+      if (this.filters) {
+        this.filters.forEach((filter) => {
+          if (
+            newVal[filter.name] !== undefined &&
+            newVal[filter.name] !== null
+          ) {
+            res[filter.name] = {
+              type: filter.type,
+              val: newVal[filter.name],
+            };
+          }
+        });
+      }
+      this.$emit("input", res);
+
+      // this.$emit("input", newVal);
     },
   },
 };

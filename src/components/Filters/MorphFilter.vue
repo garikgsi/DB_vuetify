@@ -1,30 +1,30 @@
 <template>
   <div>
-    <abp-select
+    <morph-input
       :inputValue="inputValue"
       :title="title"
-      :table="table"
+      :tables="tables"
+      :name="name"
       :multiple="true"
       :chooseEqual="false"
-      :disabled="disabled"
       :editable="false"
       :clearable="true"
       :showParams="0"
       :withChips="true"
+      :disabled="disabled"
       @input="changeInput($event)"
-    ></abp-select>
+    ></morph-input>
   </div>
 </template>
 
 <script>
-import ABPSelectVue from "../Form/ABPSelect.vue";
+import MorphInputVue from "../Form/MorphInput.vue";
 // import ABPSelectInput from '../Form/ABPSelectInput'
 
 export default {
-  name: "select-filter",
+  name: "morph-filter",
   components: {
-    // 'abp-select-input' : ABPSelectInput
-    "abp-select": ABPSelectVue,
+    "morph-input": MorphInputVue,
   },
   model: {
     prop: "inputValue",
@@ -34,12 +34,18 @@ export default {
     inputValue: {
       required: true,
     },
+    // имя morph-поля в моделе
+    name: {
+      type: String,
+      required: true,
+    },
+
     title: {
       type: String,
       required: false,
     },
-    table: {
-      type: String,
+    tables: {
+      type: Array,
       required: true,
     },
     // функционал фильтра неактивен

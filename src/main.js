@@ -45,7 +45,7 @@ new Vue({
         // this.$store.commit('SET_USER',userData)
         this.$store.dispatch('setUser',userData)
         axios.interceptors.response.use(
-            response => response,
+            response => response, 
             error => {
                 if (error.response.status === 401) {
                     this.store.dispatch('logout')

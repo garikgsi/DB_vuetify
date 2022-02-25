@@ -52,12 +52,12 @@
           Теперь Вы можете распечатать документы
         </v-card-text>
         <v-card-actions>
-          <!-- <v-btn
+          <v-btn
             v-if="invoice"
             color="primary"
             @click.stop="openPdf({ table: 'invoices', id: invoice.id })"
             >Печать счета</v-btn
-          > -->
+          >
           <v-btn
             v-if="act"
             color="success"

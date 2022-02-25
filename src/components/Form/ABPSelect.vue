@@ -7,7 +7,7 @@
     }} -->
     <!-- inputValue={{ inputValue }} -->
     <!-- options={{ options }} optionsChanged={{ optionsChanged }} -->
-
+    <!-- val={{ val }} -->
     <v-select
       v-model="val"
       :items="items"
@@ -37,7 +37,16 @@
             @click:close="doUnset(data.item[itemValue])"
           >
             <span style="max-width: 70px;" class="d-inline-block text-truncate">
-              {{ data.item[itemText] }}
+              <v-tooltip top>
+                <template v-slot:activator="{ on, attrs }"
+                  ><span v-bind="attrs" v-on="on">
+                    {{ data.item[itemText] }}
+                  </span>
+                </template>
+                {{ data.item[itemText] }}
+              </v-tooltip>
+
+              <!-- {{ data.item[itemText] }} -->
             </span>
           </v-chip>
           <span
@@ -138,7 +147,7 @@
       v-if="table"
       :width="formWidth"
     >
-      <abp-form
+      <!-- <abp-form
         v-if="showForm"
         v-model="formSelector"
         :table="table"
@@ -155,7 +164,27 @@
         @submitSuccess="submitted($event)"
         @toggleMiniForm="toggleMiniForm"
       >
-      </abp-form>
+      </abp-form> -->
+      <abp-form-editor
+        v-if="showForm"
+        v-model="formSelector"
+        :table="table"
+        :id="inputId"
+        :modType="modType"
+        :params="{
+          miniForm: isMiniForm,
+          canSwitchMini: true,
+          singleFieldRow: isMiniForm,
+          disableDefaultSubmit: false,
+          inDialog: true,
+          showFilters: true,
+          closable: false,
+        }"
+        @closeForm="showForm = false"
+        @submitSuccess="submitted($event)"
+        @toggleMiniForm="toggleMiniForm"
+      >
+      </abp-form-editor>
     </abp-dialog>
   </div>
 </template>
@@ -163,8 +192,9 @@
 <script>
 import { mapActions } from "vuex";
 import ABPDialogVue from "../Dialogs/ABPDialog.vue";
-import ABPFormVue from "../Forms/ABPForm.vue";
+// import ABPFormVue from "../Forms/ABPForm.vue";
 import ABPSelectParamsTableVue from "../Tables/ABPSelectParamsTable.vue";
+import ABPFormEditorVue from "../Views/ABPFormEditor.vue";
 import ABPIconButtonVue from "./ABPIconButton.vue";
 import ABPSelectSearchVue from "./ABPSelectSearch.vue";
 
@@ -175,7 +205,8 @@ export default {
     "abp-icon-button": ABPIconButtonVue,
     "abp-dialog": ABPDialogVue,
     "abp-select-params-table": ABPSelectParamsTableVue,
-    "abp-form": ABPFormVue,
+    // "abp-form": ABPFormVue,
+    "abp-form-editor": ABPFormEditorVue,
   },
   model: {
     prop: "inputValue",
@@ -466,15 +497,24 @@ export default {
     },
     // действия на закрытие формы с таблицей подбора по параметрам
     selectFromTable() {
-      // console.log(`tableSelector=${JSON.stringify(this.tableSelector)}`);
+      console.log(`tableSelector=${JSON.stringify(this.tableSelector)}`);
+      console.log(`selectedObjects=${JSON.stringify(this.selectedObjects)}`);
       // добавляем значения в массив
       this.tableSelector.forEach((item) => {
-        if (
-          !this.selectedObjects.find((sItem) => {
-            sItem[this.itemValue] == item[this.itemValue];
-          })
-        )
+        if (this.selectedObjects) {
+          try {
+            if (
+              !this.selectedObjects.find((sItem) => {
+                sItem[this.itemValue] == item[this.itemValue];
+              })
+            )
+              this.selectedObjects.push(item);
+          } catch (error) {
+            this.selectedObjects.push(item);
+          }
+        } else {
           this.selectedObjects.push(item);
+        }
       });
       // устанавливаем значение из таблицы подбора по параметрам
       if (this.multiple) {
@@ -575,6 +615,15 @@ export default {
     },
   },
   computed: {
+    // мини-форма добавления записи
+    isMiniForm() {
+      let denyMiniForm = ["kontragents"];
+      if (denyMiniForm.includes(this.table)) {
+        return false;
+      } else {
+        return this.miniForm;
+      }
+    },
     // значение селекта
     val: {
       get() {
@@ -590,6 +639,9 @@ export default {
                 return searchArray.filter((item) => {
                   return this.inputValue.includes(item[this.itemValue]);
                 });
+                // .map((item) => {
+                //   return item[this.itemValue];
+                // });
               } else {
                 // если все данные загружены - ищем в стейте
                 return searchArray.find((item) => {
@@ -599,6 +651,9 @@ export default {
                     // return nothing
                   }
                 });
+                // .map((item) => {
+                //   return item[this.itemValue];
+                // });
               }
             }
           }
@@ -614,12 +669,11 @@ export default {
           if (this.multiple) {
             if (!Array.isArray(newValue)) newValue = [newValue];
             // console.log(`newValue=${JSON.stringify(newValue)}`);
-            this.$emit(
-              "input",
-              newValue.map((item) => {
-                return item[this.itemValue];
-              })
-            );
+            let res = newValue.map((item) => {
+              return item[this.itemValue];
+            });
+            // console.log(`res=${JSON.stringify(res)}`);
+            this.$emit("input", res);
           } else {
             try {
               this.$emit(
@@ -674,14 +728,23 @@ export default {
       }
       // применяем фильтр
       if (this.useFilter && itogItems) {
-        itogItems = itogItems.filter((item) => {
-          return (
-            !item[this.itemDeleted] &&
-            item[this.itemText]
-              .toLowerCase()
-              .includes(this.filterLine.toLowerCase())
-          );
-        });
+        itogItems = itogItems
+          .filter((item) => {
+            try {
+              return !item[this.itemDeleted];
+            } catch (error) {
+              return true;
+            }
+          })
+          .filter((item) => {
+            try {
+              return item[this.itemText]
+                .toLowerCase()
+                .includes(this.filterLine.toLowerCase());
+            } catch (error) {
+              return true;
+            }
+          });
       }
       // исключения из списка
       // все значения, кроме исключенных
@@ -857,7 +920,7 @@ export default {
     },
     // ширина формы диалога добавления/изменения записи
     formWidth() {
-      if (this.miniForm) return 300;
+      if (this.isMiniForm) return 300;
       else return "auto";
     },
   },

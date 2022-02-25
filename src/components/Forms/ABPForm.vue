@@ -4,7 +4,8 @@
     <!-- subTables={{ subTables }}, showTabs={{ showTabs }} -->
     <!-- {{formValid}} -->
     <!-- {{formExtensions}} -->
-    <!-- items length ={{ subTableItems.length }}, fullValid= {{ fullValid }}, -->
+    <!-- subTableItemsCount ={{ subTableItemsCount }}, fullValid=
+    {{ fullValid }},validIfEmptyTable={{ validIfEmptyTable }} -->
     <!-- formValues= {{ formValues }} -->
     <!-- <br />
     <br /> -->
@@ -345,6 +346,12 @@ export default {
       type: Object,
       required: false,
     },
+    // считать форму валидной при отсутствии заполненных позиций табличной части
+    validIfEmptyTable: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
   data() {
     return {
@@ -353,7 +360,7 @@ export default {
       // форма правильно заполнена
       formValid: false,
       // таблица провалидирована
-      tableValid: false,
+      tableValid: true,
       // активный таб
       activeTab: null,
       // всего селектов в форме
@@ -484,7 +491,7 @@ export default {
           ...this.inputDataValues,
         };
         // если keyModel еще не был инициирован - заменим этими значениями инпуты
-        if (!this.keyModelInit) {
+        if (this.modType != "edit" && !this.keyModelInit) {
           res = { ...res, ...this.keyModelValues };
         }
         // items
@@ -553,7 +560,8 @@ export default {
         //     transVal
         //   )}`
         // );
-        // console.log(`setting abpform data ${JSON.stringify(newVal)}`);
+        // console.log(`setting abpform data ${JSON.stringify(transVal)}`);
+        // console.log(`newVal= ${JSON.stringify(newVal)}`);
         this.$emit("input", transVal);
       },
     },
@@ -660,6 +668,15 @@ export default {
         Vue.use(this.formValues, "items", this.storeSubTableItems);
       }
       return this.formValues.items;
+    },
+    // неудаленные items-ы
+    subTableItemsCount() {
+      if (this.subTableItems) {
+        return this.subTableItems.filter((item) => {
+          return item.deleted !== true;
+        }).length;
+      }
+      return 0;
     },
     // модель подчиненной таблицы
     subTableModel() {
@@ -850,8 +867,9 @@ export default {
         (!this.isDocument ||
           (this.isDocument &&
             this.tableValid &&
-            this.subTableItems &&
-            this.subTableItems.length > 0))
+            (this.validIfEmptyTable === true ||
+              (this.validIfEmptyTable === false &&
+                this.subTableItemsCount > 0))))
       );
     },
     // устанавливать фокус на первое поле?
@@ -1097,6 +1115,7 @@ export default {
     loadValues() {
       this.dataLoaded = true;
       this.selectsChecked = true;
+      if (this.modType == "edit") this.$emit("input", this.formValues);
     },
     //   loadValues() {
     //     if (this.fields) {
@@ -1342,7 +1361,7 @@ export default {
     },
     formValidated(valid) {
       this.formValid = valid;
-      this.$emit("validated", valid);
+      // this.$emit("validated", valid);
     },
     tableValidated(valid) {
       this.tableValid = valid;
@@ -1477,6 +1496,10 @@ export default {
     // изменение таба
     tab(newTab) {
       this.$emit("tabChange", newTab);
+    },
+    // валидация формы
+    fullValid(isValid) {
+      this.$emit("validated", isValid);
     },
     //     formValues(newValue) {
     //         console.log(`emiited new data from abp-form ${JSON.stringify(newValue)}`)

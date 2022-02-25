@@ -1,7 +1,9 @@
 <template>
   <div>
-    <!-- ->{{val}} -->
+    <!-- visibleSteps={{ visibleSteps }}, -->
+    <!-- val={{ val }} -->
     <!-- {{modelValue}} -->
+    <!-- modType={{ modType }}, step={{ step }} -->
     <v-stepper v-model="curStep">
       <!-- шапка -->
       <v-stepper-header>
@@ -29,6 +31,7 @@
             :closable="false"
             :disabled="stepperDisabled"
             class="py-2"
+            :valid-if-empty-table="true"
             @validated="formValidated($event)"
             @loaded="ste1FormLoaded = true"
           >
@@ -46,69 +49,74 @@
         </v-stepper-content>
         <!-- проверки -->
         <v-stepper-content :step="2">
-          <v-card :disabled="stepperDisabled">
-            <v-card-text class="px-0">
-              <abp-production-items-table
-                :data="val"
-              ></abp-production-items-table>
-            </v-card-text>
-            <v-divider></v-divider>
-            <v-card-actions>
-              <v-btn @click="back">
-                Назад
-              </v-btn>
-              <v-btn @click="save(true)">
-                Сохранить и закрыть
-              </v-btn>
-              <v-btn @click="savePost" color="primary">
-                Далее
-              </v-btn>
-            </v-card-actions>
-          </v-card>
+          <v-lazy v-model="visibleSteps[2]">
+            <v-card :disabled="stepperDisabled">
+              <v-card-text class="px-0">
+                <abp-production-items-table
+                  v-model="val"
+                  :id="productionId"
+                ></abp-production-items-table>
+              </v-card-text>
+              <v-divider></v-divider>
+              <v-card-actions>
+                <v-btn @click="back">
+                  Назад
+                </v-btn>
+                <v-btn @click="save(true)">
+                  Сохранить и закрыть
+                </v-btn>
+                <v-btn @click="savePost" color="primary">
+                  Далее
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-lazy>
         </v-stepper-content>
         <!-- результат -->
         <v-stepper-content :step="3">
-          <v-card :disabled="stepperDisabled">
-            <v-card-text>
-              <production-result-table
-                title="Результат производства"
-                v-model="val"
-              ></production-result-table>
-            </v-card-text>
-            <v-divider></v-divider>
-            <v-card-actions>
-              <!-- кнопки -->
-              <v-btn @click="back">
-                Назад
-              </v-btn>
-              <!-- печать -->
-              <v-menu top :close-on-click="true">
-                <template v-slot:activator="{ on, attrs }">
-                  <v-btn v-bind="attrs" v-on="on" class="menu-btn" primary>
-                    печатная форма
-                  </v-btn>
-                </template>
-                <v-list dense>
-                  <v-list-item @click="openPdf">
-                    <v-list-item-icon>
-                      <v-icon>mdi-file-pdf</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-content>
-                      Открыть в PDF
-                    </v-list-item-content>
-                  </v-list-item>
-                  <v-list-item @click="sendEmail">
-                    <v-list-item-icon>
-                      <v-icon>mdi-email-send</v-icon>
-                    </v-list-item-icon>
-                    <v-list-item-content>
-                      Отправить на email
-                    </v-list-item-content>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-            </v-card-actions>
-          </v-card>
+          <v-lazy v-model="visibleSteps[3]">
+            <v-card :disabled="stepperDisabled">
+              <v-card-text>
+                <production-result-table
+                  title="Результат производства"
+                  v-model="val"
+                ></production-result-table>
+              </v-card-text>
+              <v-divider></v-divider>
+              <v-card-actions>
+                <!-- кнопки -->
+                <v-btn @click="back">
+                  Назад
+                </v-btn>
+                <!-- печать -->
+                <v-menu top :close-on-click="true">
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-btn v-bind="attrs" v-on="on" class="menu-btn" primary>
+                      печатная форма
+                    </v-btn>
+                  </template>
+                  <v-list dense>
+                    <v-list-item @click="openPdf">
+                      <v-list-item-icon>
+                        <v-icon>mdi-file-pdf</v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-content>
+                        Открыть в PDF
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item @click="sendEmail">
+                      <v-list-item-icon>
+                        <v-icon>mdi-email-send</v-icon>
+                      </v-list-item-icon>
+                      <v-list-item-content>
+                        Отправить на email
+                      </v-list-item-content>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </v-card-actions>
+            </v-card>
+          </v-lazy>
         </v-stepper-content>
       </v-stepper-items>
     </v-stepper>
@@ -188,18 +196,37 @@ export default {
       formValid: false,
       // форма на 1-м шаге загружена
       ste1FormLoaded: false,
+      // подгрузка вкладок
+      visibleSteps: {},
     };
   },
   computed: {
     ...mapGetters(["isLoading"]),
+    // id производства
+    productionId() {
+      try {
+        return this.val.id;
+      } catch (error) {
+        return null;
+      }
+    },
     // степпер недоступен
     stepperDisabled() {
-      return this.isLoading;
+      // return this.isLoading;
+      return false;
     },
     // данные формы
     val: {
       get() {
-        return this.modelValue;
+        let res = this.modelValue;
+        if (this.modType == "edit") {
+          try {
+            res = this.$store.state.table.formData.productions[this.id];
+          } catch (error) {
+            return null;
+          }
+        }
+        return res;
       },
       set(newValue) {
         this.$emit("input", newValue);
@@ -224,8 +251,12 @@ export default {
     // доступные шаги для перехода
     availableSteps() {
       let steps = [1];
-      if (this.val.is_active == 1) {
-        steps = [...steps, ...[2, 3]];
+      try {
+        if (this.val.is_active == 1) {
+          steps = [...steps, ...[2, 3]];
+        }
+      } catch (error) {
+        // default val return below
       }
       return steps;
     },
@@ -278,13 +309,20 @@ export default {
     },
     // сохранение
     save(close = false) {
+      let values = { ...this.val };
+      if (values.items !== undefined && this.curStep == this.firstStep)
+        delete values.items;
+      // console.log(`val before = ${JSON.stringify(this.val)}`);
       let payload = {
         table: this.table,
         modType: this.modType,
-        values: this.val,
+        values,
       };
       // console.log(`payload is ${JSON.stringify(payload)}`)
       this.saveTableRow(payload).then((response) => {
+        this.val = { ...this.val, ...response };
+        // console.log(`val after = ${JSON.stringify(this.val)}`);
+        // console.log(`response = ${JSON.stringify(response)}`);
         // let newInfo = response.data.data
         if (close === true) {
           this.closeAction();
@@ -311,6 +349,7 @@ export default {
     },
     // сохраняем и проводим
     savePost() {
+      // console.log(`values=${JSON.stringify(this.val)}`);
       let payload = {
         ...{ table: this.table, modType: this.modType, values: this.val },
         ...{ postValues: { is_active: 1 } },

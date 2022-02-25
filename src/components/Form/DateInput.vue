@@ -2,6 +2,7 @@
   <div>
     <v-menu
       v-model="showCal"
+      :disabled="disabled"
       :close-on-content-click="false"
       transition="scale-transition"
       offset-y
@@ -14,6 +15,7 @@
           :rules="rules"
           :label="title"
           :hint="hint"
+          :disabled="disabled"
           persistent-hint
           :prepend-icon="icon"
           :readonly="readonly"
@@ -36,6 +38,7 @@
       <v-date-picker
         v-if="!readonly"
         :value="inputValue"
+        :disabled="disabled"
         locale="ru"
         :show-current="today"
         @input="changeInput($event)"
@@ -99,6 +102,12 @@ export default {
     },
     // без отступов - сжатый по высоте режим
     dense: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // функционал неактивен
+    disabled: {
       type: Boolean,
       required: false,
       default: false,

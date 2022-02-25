@@ -16,6 +16,7 @@
       :filters-disabled="emptyFiltersValues"
       :options="tableOptions"
       :show-column-setup="false"
+      :show-filters-block-expanded="true"
       @optionsChanged="changeOptions($event)"
     >
       <!-- вывод экспандера -->
@@ -38,7 +39,10 @@
           v-if="filters"
           :inputValue="filterValues"
           :filters="filters"
-          @input="changeFilters($event)"
+          :with-button="true"
+          :disabled="loading"
+          button-title="Сформировать отчет"
+          @submit="changeFilters($event)"
         ></simple-filters>
       </template>
     </abp-simple-table>
@@ -67,7 +71,7 @@ export default {
   data() {
     return {
       loading: false,
-      filterValues: { date: this.$moment().format("YYYY-MM-DD") },
+      filterValues: { ou_date: this.$moment().format("YYYY-MM-DD") },
     };
   },
   created() {
@@ -135,6 +139,12 @@ export default {
           table: "nomenklatura",
         },
         { name: "sklad_id", title: "Склад", type: "select", table: "sklads" },
+        {
+          name: "manufacturer_id",
+          title: "Производитель",
+          type: "select",
+          table: "manufacturers",
+        },
       ];
     },
     emptyFiltersValues() {
@@ -163,17 +173,20 @@ export default {
       "getTableFilters",
     ]),
     refreshData() {
+      console.log(`ref data started`);
       this.loading = true;
       this.getTableData({ table: this.table }).finally(() => {
+        console.log(`ref data finished`);
         this.loading = false;
       });
     },
     clearFilters() {
       this.filterValues = {};
       this.setTableFilterValues({ table: this.table, data: this.filterValues });
-      this.refreshData();
+      // this.refreshData();
     },
     changeFilters(newFilters) {
+      console.log(`filters changed`);
       this.setTableFilterValues({ table: this.table, data: newFilters }).then(
         () => {
           this.refreshData();
@@ -183,7 +196,7 @@ export default {
     changeOptions(newOptions) {
       this.syncTableOptions({ table: this.table, options: newOptions }).then(
         () => {
-          this.refreshData();
+          // this.refreshData();
         }
       );
     },

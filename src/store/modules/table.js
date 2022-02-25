@@ -61,6 +61,8 @@ export default {
         tableData:{},
         // количество данных в таблице
         tableDataCount:{},
+        // итоги таблицы
+        tableDataItogs: {},
         // количество данных в подчиненной таблице
         tableItemsDataCount:{},
         // файлы
@@ -83,14 +85,16 @@ export default {
             'contracts': {sortBy: ['contract_date'], sortDesc: [true], multiSort: false},
             'orders': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false},
             'acts': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false},
+            'invoices': {sortBy: ['doc_date'], sortDesc: [true], multiSort: false},
         },
         // отображение столбцов в таблице по умолчанию
         showCols:{
-            'nomenklatura': ['id', 'name', 'part_num','manufacturer_id','description','manufacturer','main_image','ostatok','avg_price','stock_balance'],
+            'nomenklatura': ['id', 'name', 'part_num','manufacturer_id','description','manufacturer','main_image','ostatok','avg_price','price_with_nds','stock_balance'],
             'sklad_receives': ['in_doc_num','in_doc_date','summa','kontragent_id','sklad_id'],
             'kontragents': ['name', 'inn'],
             'orders':['doc_date','comment'],
-            'acts':['kontragent','contract_type','doc_num','doc_date','sklad_id','sum']
+            'acts':['kontragent','contract_type','doc_num','doc_date','sklad_id','sum'],
+            'invoices':['kontragent','contract_type','doc_num','doc_date','sklad_id','sum'],
         },
         // отображение столбцов в мобильной версии
         showMobileCols: {
@@ -101,6 +105,7 @@ export default {
             'contracts' : [' № ${contract_num} от ${contract_date}', 'от ${kontragent}'],
             'orders' : [' № ${doc_num} от ${doc_date} (${comment})'],
             'acts' : [' № ${doc_num} от ${doc_date}', 'c ${kontragent}', 'на сумму ${sum}'],
+            'invoices' : [' № ${doc_num} от ${doc_date}', 'c ${kontragent}', 'на сумму ${sum}'],
         }
     },
 
@@ -254,7 +259,24 @@ export default {
                 try {
                     data.forEach(row=>{
                         if (row.select_list_title) {
-                            let cacheData = {id:row.id, select_list_title:row.select_list_title, deleted_at:row.deleted_at?true:false, main_image:row.main_image}
+                            let setColumns = ['main_image','deleted_at','price_with_nds','ostatok']
+                            let cacheData = {id:row.id, select_list_title:row.select_list_title}
+                            setColumns.forEach(col=>{
+                                try {
+                                    if (row[col]) {
+                                        switch (col) {
+                                            case 'deleted_at': {
+                                                cacheData[col] = row[col]?true:false
+                                            } break;
+                                            default: {
+                                                cacheData[col] = row[col]
+                                            }
+                                        }
+                                    }
+                                } catch (error) {
+                                    // нет такого поля
+                                }
+                            })
                             state.selectCacheData[table][row.id] = cacheData
                         }
                     })
@@ -427,13 +449,20 @@ export default {
                 Vue.set(state.tableDataCount, payload.table, payload.count)
             }
         },
-        // очищаем данные таблицы
-        CLEAR_TABLE_DATA(state, payload) {
-            if (state.tableData[payload.table]) {
-                // console.log(`data for table ${payload.table} cleared`)
-                state.tableData[payload.table] = []
+        SET_TABLE_DATA_ITOGS(state, {table, itogs}) {
+            if (state.tableDataItogs[table]) {
+                state.tableDataItogs[table] = itogs
             } else {
-                Vue.set(state.tableData, payload.table, [])
+                Vue.set(state.tableDataItogs, table, itogs)
+            }
+        },
+        // очищаем данные таблицы
+        CLEAR_TABLE_DATA(state, {table}) {
+            if (state.tableData[table]) {
+                // console.log(`data for table ${payload.table} cleared`)
+                state.tableData[table] = []
+            } else {
+                Vue.set(state.tableData, table, [])
             }
         },
         // добавляем данные к существующим в таблице
@@ -809,15 +838,51 @@ export default {
                     }
                     // фильтры
                     if (o.filters) {
+                        // console.log(`filters=${JSON.stringify(o.filters)}`)
                         for (let filter in o.filters) {
                             if (filters !== '') filters += ' and '
-                            // проверим на пустоту
-                            if (Array.isArray(o.filters[filter])) {
-                                if (o.filters[filter].length>0) filters += `${filter} eq ${o.filters[filter]}`
+                            // Значение фильтра
+                            let filterVal = o.filters[filter]
+                            // если значение фильтра содержит тип и значение (новый подход к формированию)
+                            // полностью фильтр выглядит, как filter:{type:'morph', val:{order_.contract_.contractable:{"order_.contract_.contractable_id":[],"order_.contract_.contractable_type":"App\\Kontragent"}}}
+                            if (filterVal && filterVal.type && filterVal.val) {
+                                switch (filterVal.type) {
+                                    case 'string': {
+                                        if (filterVal.val != null) filters += `${filter} like ${filterVal.val}`
+                                    } break;
+                                    case 'morph': {
+                                        if (filterVal.val[`${filter}_id`] && filterVal.val[`${filter}_type`]) {
+                                            let morphType = Array.isArray(filterVal.val[`${filter}_type`]) ? filterVal.val[`${filter}_type`] : [filterVal.val[`${filter}_type`]]
+                                            let morphIds = filterVal.val[`${filter}_id`] ? filterVal.val[`${filter}_id`] : []
+                                            filters += `${filter} morphIn ${JSON.stringify(morphType)}.${JSON.stringify(morphIds)}`
+                                        }
+                                    } break;
+                                    case 'select': case 'groups':  {
+                                        if (Array.isArray(filterVal.val)) {
+                                            if (filterVal.val.length>0) filters += `${filter} in ${JSON.stringify(filterVal.val)}`
+                                        } else {
+                                            if (filterVal.val != null) filters += `${filter} eq ${filterVal.val}`
+                                        }
+                                    } break;
+                                    case 'boolean': {
+                                        if (filterVal.val != null) filters += `${filter} eq ${filterVal.val}`
+                                    } break;
+                                    default: {
+                                        if (filterVal.val != null) filters += `${filter} eq ${filterVal.val}`
+                                    }
+                                }
                             } else {
-                                if (o.filters[filter] != null) filters += `${filter} eq ${o.filters[filter]}`
-                            }
+                                // значение - просто данные (старый подход к формированию фильтров)
+                                // полностью фильтр выглядит, как filter:[val1, val2]
+                                // проверим на пустоту
+                                if (Array.isArray(o.filters[filter])) {
+                                    if (o.filters[filter].length>0) filters += `${filter} in ${JSON.stringify(o.filters[filter])}`
+                                } else {
+                                    if (o.filters[filter] != null) filters += `${filter} eq ${o.filters[filter]}`
+                                }
 
+                            }
+                            
                         }
                     }
                     url += `&filter=${filters}`
@@ -982,9 +1047,9 @@ export default {
             return new Promise((resolve, reject)=>{
                 if (state.selectCacheData[table] && state.selectCacheData[table][id]) {
                     // пытаемся выдать результат из кэша
-                    let title = state.selectCacheData[table][id]
+                    let cacheRes = state.selectCacheData[table][id]
                     // console.log(`выдаю значение из кэша таблицы [${table}] для id=[${id}] = ${state.selectCacheData[table][id]}`)
-                    resolve(title)
+                    resolve(cacheRes)
                 } else {
                     // опции получения данных
                     let dataOptions = {table, options:{trashed: true, limit: -1, filters: {id}, search: null, odata:'list', page:null, itemsPerPage:null, fields:['id']}}
@@ -1245,11 +1310,19 @@ export default {
             // }
         },
 
+        // очистка данных в таблице
+        clearTableData({commit},{table}) {
+            return new Promise((resolve) => {
+                commit('CLEAR_TABLE_DATA',{table})
+                resolve(true)
+            })
+        },
+
         // получить данные таблицы
         async getTableData({commit, dispatch}, payload) {
             // подгрузим модель
             await dispatch('getTableModel', payload.table)
-            commit('CLEAR_TABLE_DATA',{table: payload.table})
+            await dispatch('clearTableData', {table:payload.table})
             let curOptions = await dispatch('getTableOptions', payload.table)
             // if (payload.options) curOptions = {...curOptions, ...payload.options}
             let tablePayload = {...payload, ...{options:{...curOptions, ...payload.options}}}
@@ -1260,13 +1333,14 @@ export default {
             return new Promise((resolve)=>{
                 resolve(dispatch('getPacketData', {
                     ...tablePayload,
-                    callback: ({data, is_error, error, count}) => {
+                    callback: ({data, is_error, error, count, itogs}) => {
                         if (is_error) {
                             dispatch('pushError', error) 
                         } else {
                             commit('ADD_TABLE_DATA',{table: payload.table, data})
                             commit('SET_TABLE_DATA_COUNT', {table:payload.table, count})
                             commit('ADD_CACHE_SELECT_DATA',{table:payload.table, data})
+                            if (itogs) commit('SET_TABLE_DATA_ITOGS',{table:payload.table, itogs})
                         }
                     }
                 }))
@@ -1485,7 +1559,7 @@ export default {
                             res = model.filter(field=>{
                                 if (getters.serviceFieldNames.indexOf(field.name)===-1) {
                                     if (!hasText && getters.searchFieldTypes.indexOf(field.type)!==-1) hasText = true
-                                    return getters.filterFieldTypes.indexOf(field.type)!==-1 && !field.ignore_filters
+                                    return (getters.filterFieldTypes.indexOf(field.type)!==-1 && !field.ignore_filters) || field.filter==true
                                 }
                             })
                         }
@@ -1675,7 +1749,7 @@ export default {
                     })
             })
         },
-// TODO - тестить!
+
         // выдаем файл печатной формы
         getPrintForm({dispatch,getters}, {table, id}) {
             return new Promise((resolve, reject)=>{

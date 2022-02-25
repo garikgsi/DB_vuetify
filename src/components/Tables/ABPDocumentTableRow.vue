@@ -146,6 +146,7 @@
         :disabled="deleted || disabled"
         dense
         @loaded="fieldLoaded(col)"
+        @change="nomenklaturaChange($event, col)"
       ></nomenklatura-input>
       <!-- <abp-select-input -->
       <abp-select
@@ -159,6 +160,7 @@
         :disabled="deleted || disabled"
         dense
         @loaded="fieldLoaded(col)"
+        @input="nomenklaturaChange($event, col)"
       ></abp-select>
       <!-- ></abp-select-input> -->
       <money-input
@@ -195,7 +197,7 @@
         :required="!deleted"
         :readonly="readonly"
         :disabled="deleted || disabled"
-        @change="changeInput($event, col)"
+        @change="nomenklaturaChange($event, col)"
         @loaded="fieldLoaded(col.value)"
       ></stock-balance-input>
       <text-input
@@ -216,7 +218,7 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters, mapActions } from "vuex";
 // import ABPSelectInput from "../Form/ABPSelectInput";
 import TextInput from "../Form/TextInput";
 import ABPIconButton from "../Form/ABPIconButton";
@@ -341,10 +343,42 @@ export default {
     },
   },
   methods: {
+    ...mapActions(["searchInSelect"]),
+    async nomenklaturaChange(newValue, field) {
+      // автоматическое заполнение розничной цены
+      if (
+        field.type == "stock_balance" ||
+        (field.type == "select" && field.table == "nomenklatura")
+      ) {
+        // console.log(
+        //   `nomenklatura changed: ${JSON.stringify(field)} to ${newValue}`
+        // );
+        // console.log(`select changed? price==${this.row[this.amountName]}`);
+        // получим информацию о номенклатуре
+        try {
+          let nomenklatura = await this.searchInSelect({
+            table: "nomenklatura",
+            id: newValue,
+          });
+          // console.log(`nomenklatura=${JSON.stringify(nomenklatura)}`);
+          // изменяем цену
+          this.row[this.priceName] = nomenklatura.price_with_nds;
+          this.changeInput(nomenklatura.price_with_nds, {
+            value: this.priceName,
+          });
+          // this.row[this.priceName] = nomenklatura.price_with_nds;
+        } catch (e) {
+          // nothing to change
+        }
+      }
+    },
+    // изменение цены, кол-ва, суммы
     changeInput(newValue, field) {
+      // console.log(`field changed: ${JSON.stringify(field)} to ${newValue}`);
       let fieldName = field.value;
       // let fieldType = field.type
       if (fieldName == this.priceName) {
+        // автоматический пересчет цены, кол-ва, суммы
         if (this.row[this.quantityName])
           this.row[this.amountName] = parseFloat(
             (newValue * this.row[this.quantityName]).toFixed(2)

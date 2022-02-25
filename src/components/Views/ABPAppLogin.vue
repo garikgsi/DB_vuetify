@@ -93,11 +93,11 @@ export default {
     },
     // ссылка на восстановление пароля
     forgotPasswordLink() {
-      return `${this.baseURL}/password/reset`;
+      return this.baseURL.replace("/api/v1/", "/password/reset");
     },
     // ссылка на регистрацию
     RegisterLink() {
-      return `${this.baseURL}/register`;
+      return this.baseURL.replace("/api/v1/", "/register");
     },
   },
   methods: {

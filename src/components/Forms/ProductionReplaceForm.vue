@@ -1,5 +1,6 @@
 <template>
   <div>
+    <!-- val={{ val }} -->
     <abp-simple-form
       v-if="stateLoaded"
       :title="title"
@@ -10,13 +11,20 @@
       <template v-slot:fields>
         <v-row dense>
           <v-col cols="12" md="3">
-            <abp-select-input
+            <!-- <abp-select-input
               v-model="val.nomenklatura_from_id"
               title="Заменяемый компонент"
               table="nomenklatura"
               :required="true"
               :readonly="true"
-            ></abp-select-input>
+            ></abp-select-input> -->
+            <abp-select
+              v-model="val.nomenklatura_from_id"
+              title="Заменяемый компонент"
+              table="nomenklatura"
+              :required="true"
+              :readonly="true"
+            ></abp-select>
           </v-col>
           <v-col cols="12" md="2">
             <kolvo-input
@@ -43,12 +51,18 @@
             ></kolvo-input>
           </v-col>
           <v-col cols="12" md="3">
-            <abp-select-input
+            <abp-select
               v-model="val.nomenklatura_to_id"
               title="Заменитель"
               table="nomenklatura"
               :required="true"
-            ></abp-select-input>
+            ></abp-select>
+            <!-- <abp-select-input
+              v-model="val.nomenklatura_to_id"
+              title="Заменитель"
+              table="nomenklatura"
+              :required="true"
+            ></abp-select-input> -->
           </v-col>
           <v-col cols="12">
             <switch-input
@@ -67,8 +81,9 @@
 
 <script>
 import { mapActions, mapGetters } from "vuex";
+import ABPSelectVue from "../Form/ABPSelect.vue";
 
-import ABPSelectInputVue from "../Form/ABPSelectInput.vue";
+// import ABPSelectInputVue from "../Form/ABPSelectInput.vue";
 import KolvoInputVue from "../Form/KolvoInput.vue";
 import SwitchVue from "../Form/Switch.vue";
 import ABPWaitingMessageVue from "../Info/ABPWaitingMessage.vue";
@@ -78,10 +93,11 @@ export default {
   name: "production-replace-form",
   components: {
     "abp-simple-form": ABPSimpleFormVue,
-    "abp-select-input": ABPSelectInputVue,
+    // "abp-select-input": ABPSelectInputVue,
     "kolvo-input": KolvoInputVue,
     "switch-input": SwitchVue,
     "abp-waiting-message": ABPWaitingMessageVue,
+    "abp-select": ABPSelectVue,
   },
   model: {
     prop: "inputValue",

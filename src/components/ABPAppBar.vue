@@ -47,12 +47,11 @@ import { mapGetters, mapActions } from "vuex";
 export default {
   created() {
     this.getTime();
-    this.getNotifications();
     setInterval(() => {
       this.getTime();
     }, 10000);
     setInterval(() => {
-      this.getNotifications();
+      if (this.isAuth) this.getNotifications();
     }, 600000);
   },
   data() {

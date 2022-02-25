@@ -24,7 +24,9 @@ export default {
         // время ожидания запроса до прерывания в секундах
         waitResponseTime: 120,
         // состояния открытых табов
-        tabState: {}
+        tabState: {},
+        // тайтл программы
+        programTitle: 'База данных ООО «Концерн «МОЙДОДЫР»'
     },
 
     mutations: {
@@ -83,6 +85,36 @@ export default {
         },
         setTitle({commit}, title) {
             commit('SET_TITLE', title)
+        },
+        // устанавливаем тайтл страницы to
+        async setRouteTitle({dispatch},to) {
+            let title = ''
+            try {
+                switch(to.name) {
+                    case 'table': {
+                        if (to.params.table) {
+                            let model = await dispatch('getTableModel',to.params.table)
+                            title = model.extensions.props.titles.table
+                        }
+                    } break;
+                    case 'form': {
+                        if (to.params.table && to.params.modType) {
+                            let model = await dispatch('getTableModel',to.params.table)
+                            title = model.extensions.props.titles[to.params.modType]
+                        }
+                    } break;
+                    case 'report': {
+                        title='Отчет по остаткам на складах'
+                    } break;
+                    case 'sotrudniks': {
+                        title='Наши сотрудники'
+                    }
+                }
+            } catch (error) {
+                // default title set below
+            }
+            
+            dispatch('setTitle',title)
         },
         setSidebarShow({commit}, showSidebar) {
             commit('SET_SIDEBAR_SHOW', showSidebar)
@@ -196,6 +228,12 @@ export default {
                         res.count = response.data.count
                     } catch (error) {
                         res.count = null
+                    }
+                    // итоги
+                    try {
+                        res.itogs = response.data.itogs
+                    } catch (error) {
+                        res.itogs = null
                     }
                     // модель
                     try {
@@ -486,6 +524,9 @@ export default {
         },
         waitResponseTime(state) {
             return state.waitResponseTime
+        },
+        programTitle(state) {
+            return state.programTitle
         }
 
     }

@@ -1,5 +1,12 @@
 <template>
   <div>
+    <!-- data={{ data }} -->
+    <!-- replaces={{ data.replaces }},  -->
+    <!-- replacements={{ replacements }}, -->
+    <!-- componentReplacements={{ componentReplacements }}, replacements={{
+      replacements
+    }} -->
+    <!-- typeData = {{ typeData }} -->
     <abp-simple-table
       :model="typeModel"
       :items="typeData"
@@ -34,28 +41,32 @@
         >
           <!-- действия в строке компонентов изделия -->
           <template v-slot:[`actions`]="{ item }">
-            <div v-if="isMobile">
-              <v-btn text color="primary" @click="componentReplace(item)">
+            <div class="abp-column">
+              <v-btn
+                v-if="isMobile"
+                text
+                color="primary"
+                @click="componentReplace(item)"
+              >
                 Замены
               </v-btn>
-            </div>
-            <div v-else>
               <abp-icon-button
+                v-else
                 :icon="replaceIcon"
                 tip="Заменить компонент изделия"
                 @click="componentReplace(item)"
               ></abp-icon-button>
+              <!-- удаление -->
+              <abp-delete-button
+                title="Подтвердите удаление"
+                :icon="!isMobile"
+                color="primary"
+                text="Сейчас будет удален компонент из выбранного изделия. Продолжаем?"
+                tip="Удалить компонент"
+                btn-text="Удалить"
+                @click="deleteItemComponent(item)"
+              ></abp-delete-button>
             </div>
-            <!-- удаление -->
-            <abp-delete-button
-              title="Подтвердите удаление"
-              :icon="!isMobile"
-              color="primary"
-              text="Сейчас будет удален компонент из выбранного изделия. Продолжаем?"
-              tip="Удалить компонент"
-              btn-text="Удалить"
-              @click="deleteItemComponent(item)"
-            ></abp-delete-button>
           </template>
         </abp-items-table>
         <abp-items-table
@@ -98,7 +109,7 @@
       <!-- действия в большой таблице -->
       <template v-slot:[`item.actions`]="{ item }">
         <!-- действия в режиме дерева -->
-        <div v-if="treeType">
+        <div v-if="treeType" class="abp-column">
           <!-- добавление компонентов в режиме tree -->
           <v-btn
             v-if="isMobile"
@@ -116,7 +127,7 @@
           ></abp-icon-button>
         </div>
         <!-- действия в режиме списка компонентов -->
-        <div v-else>
+        <div v-else class="abp-column">
           <!-- замены -->
           <v-btn
             v-if="isMobile"
@@ -338,11 +349,23 @@ export default {
     "abp-delete-button": ABPDeleteButtonVue,
     "production-component-form": ProductionComponentFormVue,
   },
+  model: {
+    prop: "inputValue",
+    event: "input",
+  },
+
   props: {
-    data: {
+    inputValue: {
       type: Object,
-      required: false,
     },
+    id: {
+      type: [Number || String],
+      required: true,
+    },
+    // data: {
+    //   type: Object,
+    //   required: false,
+    // },
   },
   data() {
     return {
@@ -376,18 +399,6 @@ export default {
       componentFormTitle: "",
       // тайтл формы замены
       replacementFormTitle: "",
-      // данные замены по умолчанию
-      replacementDefault: {
-        production_id: this.data.id,
-        component_id: 1,
-        nomenklatura_from_id: 1,
-        nomenklatura_from: null,
-        nomenklatura_to_id: 1,
-        nomenklatura_to: null,
-        kolvo_from: 1,
-        kolvo_to: 1,
-        save_to_recipe: false,
-      },
       // таблица замен
       showReplacesTable: false,
       // признак открытия диалога подтверждения замены существующего компонента
@@ -402,9 +413,58 @@ export default {
       ostatki: {},
     };
   },
-  created() {},
+  created() {
+    if (!this.hasItems) {
+      this.getFormData({ tableName: "productions", id: this.id }).then(() => {
+        // console.log(`items data loaded`);
+      });
+    }
+  },
   computed: {
     ...mapGetters(["isMobile"]),
+    data: {
+      get() {
+        if (this.hasItems) {
+          return this.inputValue;
+        } else {
+          return this.$store.state.table.formData.productions[this.id];
+        }
+      },
+      set(newValue) {
+        // console.log(
+        //   `set new values from itemsTable=${JSON.stringify(newValue)}`
+        // );
+        this.$emit("input", newValue);
+      },
+    },
+    // есть произведенные изделия
+    hasItems() {
+      try {
+        return this.data.items.length > 0;
+      } catch (error) {
+        // default return below
+      }
+      return false;
+    },
+    // данные замены по умолчанию
+    replacementDefault() {
+      let res = {
+        component_id: 1,
+        nomenklatura_from_id: 1,
+        nomenklatura_from: null,
+        nomenklatura_to_id: 0,
+        nomenklatura_to: null,
+        kolvo_from: 1,
+        kolvo_to: 1,
+        save_to_recipe: false,
+      };
+      try {
+        res.production_id = this.data.id;
+      } catch (error) {
+        res.production_id = null;
+      }
+      return res;
+    },
     // склад
     sklad_id() {
       return this.data ? this.data.sklad_id : null;
@@ -412,12 +472,18 @@ export default {
     // замены
     replacements: {
       get() {
-        if (!this.data.replaces) {
-          Vue.set(this.data, "replaces", []);
+        let replaces = [];
+        try {
+          replaces = this.data.replaces.map((r, i) => {
+            return { ...{ i: i, deleted: false }, ...r };
+          });
+          if (!this.data.replaces) {
+            Vue.set(this.data, "replaces", replaces);
+          }
+        } catch (error) {
+          // no replaces
         }
-        return this.data.replaces.map((r, i) => {
-          return { ...{ i: i, deleted: false }, ...r };
-        });
+        return replaces;
       },
       set(newValue) {
         this.data.replaces = newValue;
@@ -431,50 +497,57 @@ export default {
     },
     // количество изделий
     itemsCount() {
-      return this.data.items.length;
+      try {
+        return this.data.items.length;
+      } catch (error) {
+        // default return below
+      }
+      return 0;
     },
     // данные таблицы production_items
     items() {
-      return this.data.items
-        ? this.data.items.map((item) => {
-            let prod = {
-              id: item.id,
-              kolvo: item.kolvo,
-              nomenklatura: item.nomenklatura,
-              serial: item.serial,
-              components: item.components
-                ? item.components.map((component) => {
-                    let stock_balance = this.getOstatok(
-                      component.nomenklatura_id
-                    );
-                    let kolvo = parseFloat(component.kolvo);
-                    let delta =
-                      kolvo > stock_balance ? stock_balance - kolvo : 0;
+      try {
+        return this.data.items.map((item) => {
+          let prod = {
+            id: item.id,
+            kolvo: item.kolvo,
+            nomenklatura: item.nomenklatura,
+            serial: item.serial,
+            components: item.components
+              ? item.components.map((component) => {
+                  let stock_balance = this.getOstatok(
+                    component.nomenklatura_id
+                  );
+                  let kolvo = parseFloat(component.kolvo);
+                  let delta = kolvo > stock_balance ? stock_balance - kolvo : 0;
 
-                    let comp = {
-                      item_id: item.id,
-                      id: component.id,
-                      nomenklatura_id: component.nomenklatura_id,
-                      kolvo: kolvo,
-                      nomenklatura: component.nomenklatura,
-                      stock_balance: stock_balance,
-                      delta: delta,
-                      replacements: this.replacements.filter((r) => {
-                        return r.component_id == component.id && !r.deleted;
-                      }),
-                    };
-                    comp.has_replacements = comp.replacements.length > 0;
-                    return comp;
-                  })
-                : [],
-            };
-            prod.has_replacements =
-              prod.components.filter((comp) => {
-                return comp.has_replacements;
-              }).length > 0;
-            return prod;
-          })
-        : [];
+                  let comp = {
+                    item_id: item.id,
+                    id: component.id,
+                    nomenklatura_id: component.nomenklatura_id,
+                    kolvo: kolvo,
+                    nomenklatura: component.nomenklatura,
+                    stock_balance: stock_balance,
+                    delta: delta,
+                    replacements: this.replacements.filter((r) => {
+                      return r.component_id == component.id && !r.deleted;
+                    }),
+                  };
+                  comp.has_replacements = comp.replacements.length > 0;
+                  return comp;
+                })
+              : [],
+          };
+          prod.has_replacements =
+            prod.components.filter((comp) => {
+              return comp.has_replacements;
+            }).length > 0;
+          return prod;
+        });
+      } catch (error) {
+        // default return below
+      }
+      return [];
     },
     // данные таблицы компонентов
     componentsData() {
@@ -498,7 +571,12 @@ export default {
     },
     // массив id продуктов
     productIds() {
-      return [this.data.nomenklatura_id];
+      try {
+        return [this.data.nomenklatura_id];
+      } catch (error) {
+        // default return below
+      }
+      return [];
     },
     // массив id компонентов
     componentsIds() {
@@ -622,12 +700,13 @@ export default {
           // res.stock_balance = this.getOstatok(component.nomenklatura_id)
           // res.kolvo = parseFloat(component.kolvo)
           // res.delta = res.kolvo>res.stock_balance ? res.stock_balance-res.kolvo : 0
-          res.has_replacements = this.replacements.find((replace) => {
+          let findReplace = this.replacements.find((replace) => {
             return (
-              replace.component_id == item.id &&
+              replace.component_id == component.id &&
               replace.nomenklatura_from_id == component.nomenklatura_id
             );
           });
+          res.has_replacements = !!findReplace;
           res.lines = [
             `${component.nomenklatura}`,
             `Кол-во: ${component.kolvo}`,
@@ -697,18 +776,22 @@ export default {
       if (this.replacements) {
         let res = {};
         // замены компонент
-        let compRepl = this.replacements.filter((r) => {
-          return r.component_id != 1 && !r.deleted;
-        });
+        let compRepl = this.replacements
+          .filter((r) => {
+            return r.component_id != 1;
+          })
+          .filter((r) => {
+            try {
+              return !r.deleted;
+            } catch (error) {
+              return true;
+            }
+          });
         compRepl.forEach((cr) => {
-          // найдем id изделия
-          // let item = this.items.find(prod=>{
-          //     return prod.components.find(comp=>{
-          //         return comp.id==cr.component_id
-          //     })
-          // })
           let item = this.items.find((prod) => {
-            return prod.id == cr.component_id;
+            return prod.components.find((comp) => {
+              return comp.id == cr.component_id;
+            });
           });
           if (item) {
             if (res[item.id] != undefined) {
@@ -740,7 +823,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(["getSelectData"]),
+    ...mapActions(["getSelectData", "getFormData"]),
     // поиск остатка по id номенклатуры
     getOstatok(id) {
       // если уже находили
@@ -775,21 +858,32 @@ export default {
     },
     // замена на уровне компонента
     componentReplace(item) {
-      // console.log(`item=${JSON.stringify(item)}`)
+      // console.log(`item=${JSON.stringify(item)}`);
       // добавление замены
       this.replacement_id = null;
       // передаем значения
       this.replacement = {
         ...this.replacementDefault,
         ...{
-          component_id: item.item_id,
+          // component_id: item.item_id,
+          component_id: item.id,
           nomenklatura_from_id: item.nomenklatura_id,
           nomenklatura_from: item.nomenklatura,
         },
       };
       // найдем серийник изменяемого изделия
-      let prod = this.findProductByComponentId(item.item_id);
-      let serial = prod ? prod.serial : "";
+      // let prod = this.findProductByComponentId(item.item_id);
+      // let serial = prod ? prod.serial : "";
+      let serial = "";
+      try {
+        let prod = this.items.filter((it) => {
+          return it.id == item.item_id;
+        });
+        if (prod.length > 0) serial = prod[0].serial;
+      } catch (error) {
+        // no serial found
+      }
+
       // меняем тайтл формы
       this.replacementFormTitle = `Добавить замену для ${item.nomenklatura} изделия с SN ${serial}`;
       // показываем форму замены
@@ -802,7 +896,7 @@ export default {
       // передаем значения
       this.replacement = {
         ...this.replacementDefault,
-        ...{ nomenklatura_from_id: item.nomenklatura_id },
+        ...{ component_id: 1, nomenklatura_from_id: item.nomenklatura_id },
       };
       // меняем тайтл формы
       this.replacementFormTitle = `Добавить замену для ${item.nomenklatura}`;

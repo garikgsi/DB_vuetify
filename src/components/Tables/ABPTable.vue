@@ -11,6 +11,7 @@
       :model="tableModel"
       v-model="selected"
       :items="dataItems"
+      :itogs="dataItogs"
       :total="tableDataCount"
       :options="tableOptions"
       :show-only-columns="cols"
@@ -121,11 +122,11 @@
             >
             </abp-delete-button>
           </template>
-          <template v-if="printable">
+          <!-- <template v-if="printable">
             <v-btn color="primary" text @click="printForm(item.id)">
               Печать
             </v-btn>
-          </template>
+          </template> -->
         </div>
         <!-- для десктопа -->
         <v-row v-else class="action-table-buttons">
@@ -480,6 +481,7 @@ export default {
       "setTitle",
       "addItemsData",
       "getPrintForm",
+      "clearTableData",
     ]),
     // печатная форма
     printForm(id) {
@@ -532,10 +534,10 @@ export default {
           if (this.itemsTable) {
             this.getTableModel(this.itemsTable.table);
           }
-          if (this.tableTitle) this.setTitle(this.tableTitle);
+          // if (this.tableTitle) this.setTitle(this.tableTitle);
           // на мобиле - получим данные и опции таблицы
           if (this.tableOptions !== undefined) {
-            // this.getData();
+            if (this.isMobile) this.getData();
           } else {
             this.syncTableOptions({
               table: this.tableName,
@@ -567,6 +569,7 @@ export default {
     },
     changeFilters(newVal) {
       this.filters = { ...newVal };
+      // this.clearTableData("clearTableData", { table: this.table });
       this.tableOptions = {
         ...this.tableOptions,
         ...{ page: 1 },
@@ -1077,7 +1080,9 @@ export default {
         return this.tableModel.filter((field) => {
           return (
             this.serviceFieldNames.indexOf(field.name) === -1 &&
-            (field.show_in_table == undefined || field.show_in_table != false)
+            (field.show_in_table == undefined ||
+              field.show_in_table != false ||
+              field.filter)
           );
         });
       }
@@ -1212,6 +1217,18 @@ export default {
         // в таблице не форматируем результат
         return unformat_data;
       }
+    },
+    // итоги
+    dataItogs() {
+      try {
+        let itogs = this.$store.state.table.tableDataItogs[this.tableName];
+        if (!Array.isArray(itogs)) {
+          if (Object.keys(itogs).length > 0) return itogs;
+        }
+      } catch (e) {
+        return null;
+      }
+      return null;
     },
     // страница списка
     page: {

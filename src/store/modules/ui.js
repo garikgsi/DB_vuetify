@@ -75,11 +75,17 @@
                 icon: 'mdi-human-dolly',
                 route: '/table/acts',
             },
+            {
+                name: 'invoices',
+                title: 'Счета',
+                icon: 'mdi-currency-usd',
+                route: '/table/invoices',
+            },
             // отчеты
             {
                 name: 'report-sklad-remains',
                 title: 'Отчет по остаткам',
-                icon: 'mdi-paper-roll',
+                icon: 'mdi-chart-donut',
                 route: '/report/report_sklad_remains',
             },
             // декстопные вью
@@ -92,7 +98,8 @@
                 'catalog-nomenklatura',
                 'catalog-sotrudniks',
                 'catalog-firms',
-                'action-acts'
+                'action-acts',
+                'invoices'
             ],
             desktop: [
 
@@ -100,7 +107,8 @@
             footer: [
                 'catalog-kontragents',
                 'report-sklad-remains',
-                'catalog-nomenklatura'
+                'catalog-nomenklatura',
+                'invoices'
             ]
         }
         const topRole = {

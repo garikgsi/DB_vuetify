@@ -129,7 +129,7 @@
                   :color="color"
                   :sklad-id="skladId"
                   :readonly="readonly"
-                  :deleted="row.deleted"
+                  :deleted="row.deleted" 
                   :disabled="disabled"
                   :with-series="withSeries"
                   :with-series-editor="withSeriesEditor"

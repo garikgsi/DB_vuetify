@@ -5,6 +5,7 @@
     <!-- {{loadedFields}} || {{formLoaded}} -->
     <!-- {{ lazyField }} -->
     <!-- inputValue={{ inputValue }} -->
+    <!-- values={{ values }} -->
     <v-form
       v-model="formValid"
       :ref="formId"
@@ -213,7 +214,7 @@ export default {
     if (this.formLoaded) {
       if (this.setFocus) this.focus();
       // установим тайтл
-      this.setTitle(this.title);
+      // this.setTitle(this.title);
     }
     // console.log('simple-form-mounted')
   },

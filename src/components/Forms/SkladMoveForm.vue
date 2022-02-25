@@ -3,15 +3,15 @@
     <!-- skladKeeper={{skladKeeper}} -->
     <!-- modelValue={{ modelValue }} -->
     <!-- buttons={{buttons}} -->
+    <!-- formValues={{ formValues }} validated={{ validated }} -->
     <abp-form
-      :model-value="modelValue"
+      v-model="formValues"
       table="sklad_moves"
       :modType="modType"
       :id="id"
       :readonly="readonly"
       :modelMixin="modelMixin"
       :closable="false"
-      @input="changeFormData($event)"
       @validated="formValidated($event)"
     >
       <template v-slot:buttons-left>
@@ -19,7 +19,7 @@
           <v-btn
             v-for="(button, i) in buttons"
             :key="`button_${i}`"
-            :disabled="!formValid"
+            :disabled="!validated"
             :color="button.color"
             class="mr-2"
             @click.stop="makeAction(button.action)"
@@ -215,7 +215,7 @@ export default {
         let btns = [];
         if (
           !this.formValues.is_out &&
-          !this.formValues.is_out &&
+          !this.formValues.is_in &&
           !this.formValues.is_active
         ) {
           if (btns.indexOf("saveButton") === -1) btns.push("saveButton");

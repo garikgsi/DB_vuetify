@@ -3,6 +3,7 @@
   <div>
     <!-- {{ val }} -->
     <!-- если копирование и не выбраны опции копирования -->
+    <!-- params={{ params }} -->
     <div v-if="showCopyOptionsForm">
       <abp-copy-form
         :table="table"
@@ -21,6 +22,10 @@
       :keyModel="keyModel"
       v-bind="params"
       v-model="val"
+      @closeForm="closeForm"
+      @submitSuccess="submitSuccess($event)"
+      @toggleMiniForm="toggleMiniForm"
+      @input="changeValues($event)"
     ></component>
   </div>
 </template>
@@ -40,7 +45,18 @@ export default {
     "rs-form": () => import("../Forms/RSForm.vue"),
     "act-invoice-form": () => import("../Forms/SimpleInvoiceForm.vue"),
   },
+  model: {
+    prop: "modelValue",
+    event: "input",
+  },
   props: {
+    modelValue: {
+      type: Object,
+      required: false,
+      default() {
+        return { items: [] };
+      },
+    },
     table: {
       type: String,
       required: true,
@@ -75,14 +91,14 @@ export default {
   data() {
     return {
       // реактивные данные формы
-      val: { items: [] },
+      val: { ...this.modelValue, ...{ items: [] } },
       // опции копирования
       copyOptions: {},
       // опции копирования установлены
       copyOptionsIsSet: false,
     };
   },
-  created() {
+  mounted() {
     this.getTableModel(this.table).then(() => {
       if (this.formTitle) this.setTitle(this.formTitle);
     });
@@ -190,10 +206,24 @@ export default {
   },
   methods: {
     ...mapActions(["setTitle", "getTableModel"]),
+    // изменение данных формы
+    changeValues(newValues) {
+      this.$emit("input", newValues);
+    },
     // подтверждение в форме выбора опций
     copyOptionsFormSubmit() {
       this.copyOptionsIsSet = true;
       //
+    },
+    // обработчики от abp-form
+    closeForm() {
+      this.$emit("closeForm");
+    },
+    toggleMiniForm() {
+      this.$emit("toggleMiniForm");
+    },
+    submitSuccess(data) {
+      this.$emit("submitSuccess", data);
     },
   },
 };

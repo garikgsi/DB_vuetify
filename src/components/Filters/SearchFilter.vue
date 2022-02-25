@@ -8,6 +8,7 @@
       hide-details
       :dark="dark"
       :class="currentClass"
+      :disabled="disabled"
       @change="searchTextChange"
       @focus="focus"
       @blur="blur"
@@ -46,6 +47,12 @@ export default {
       required: true,
     },
     dark: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    // функционал фильтра неактивен
+    disabled: {
       type: Boolean,
       required: false,
       default: false,

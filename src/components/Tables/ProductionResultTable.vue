@@ -160,33 +160,36 @@ export default {
     },
     // данные таблицы изделий
     tableData() {
-      return this.data.items
-        ? this.data.items.map((item) => {
-            let prod = {
-              id: item.id,
-              is_producted: item.is_producted,
-              nomenklatura: item.nomenklatura,
-              serial: item.serial,
-              components: item.components
-                ? item.components.map((component) => {
-                    return {
-                      item_id: item.id,
-                      id: component.id,
-                      nomenklatura_id: component.nomenklatura_id,
-                      kolvo: component.kolvo,
-                      nomenklatura: component.nomenklatura,
-                      lines: [
-                        `${component.nomenklatura}`,
-                        `Кол-во: ${component.kolvo}`,
-                      ],
-                    };
-                  })
-                : [],
-              lines: [`${item.nomenklatura} SN ${item.serial}`],
-            };
-            return prod;
-          })
-        : [];
+      try {
+        return this.data.items.map((item) => {
+          let prod = {
+            id: item.id,
+            is_producted: item.is_producted,
+            nomenklatura: item.nomenklatura,
+            serial: item.serial,
+            components: item.components
+              ? item.components.map((component) => {
+                  return {
+                    item_id: item.id,
+                    id: component.id,
+                    nomenklatura_id: component.nomenklatura_id,
+                    kolvo: component.kolvo,
+                    nomenklatura: component.nomenklatura,
+                    lines: [
+                      `${component.nomenklatura}`,
+                      `Кол-во: ${component.kolvo}`,
+                    ],
+                  };
+                })
+              : [],
+            lines: [`${item.nomenklatura} SN ${item.serial}`],
+          };
+          return prod;
+        });
+      } catch (error) {
+        // default return below
+      }
+      return [];
     },
     // модель таблицы компонентов
     componentsTableHeaders() {

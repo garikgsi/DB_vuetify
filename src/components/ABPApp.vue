@@ -44,6 +44,7 @@ export default {
       "icons",
       "colors",
       "isLoading",
+      "programTitle",
     ]),
     showInfo: {
       get() {
@@ -62,7 +63,7 @@ export default {
   },
   created() {
     this.setBreakPoint(this.breakPoint);
-    document.title = 'База данных ООО "Мойдодыр"';
+    document.title = this.programTitle;
   },
   methods: {
     ...mapActions(["setInformation", "setBreakPoint"]),
